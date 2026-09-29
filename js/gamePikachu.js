@@ -146,8 +146,9 @@ function checkPair(first, second) {
         drawPath(path);
 
         setTimeout(function () {
+            clearPath();
             removePair(first, second);
-        }, 250);
+        }, 100);
     } else {
         showMessage("Không thể nối hai hình này");
         removeSelected();
