@@ -19,6 +19,10 @@ const images = [
 let board = [];
 let score = 0;
 let level = 1;
+let time = 300;
+let maxTime = 300;
+let timer = null;
+let gameEnded = false;
 let selected = null;
 
 const boardElement = document.getElementById("board");
@@ -26,6 +30,8 @@ const scoreElement = document.getElementById("score");
 const levelElement = document.getElementById("level");
 const messageElement = document.getElementById("message");
 const pathElement = document.getElementById("path");
+const timeElement = document.getElementById("time");
+const timeProgress = document.getElementById("timeProgress");
 
 startGame();
 
@@ -33,15 +39,62 @@ function startGame() {
     score = 0;
     level = 1;
     selected = null;
+    gameEnded = false;
 
     updateScore();
     updateLevel();
 
+    time = 300;
+    maxTime = 300;
+    updateTime();
+
     createBoard();
     renderBoard();
+    startTimer();
 
-     showMessage("Level " + level + ": Hãy chọn 2 hình giống nhau");
+    showMessage("Level " + level + ": Hãy chọn 2 hình giống nhau");
 }
+
+function startTimer() {
+    clearInterval(timer);
+
+    timer = setInterval(function () {
+        if (gameEnded) {
+            return;
+        }
+
+        time--;
+        updateTime();
+
+        if (time <= 0) {
+            gameOver();
+        }
+    }, 1000);
+}
+
+function updateTime() {
+    timeElement.textContent = time;
+
+    let percent = (time / maxTime) * 100;
+    timeProgress.style.width = percent + "%";
+
+    if (time <= 10) {
+        timeProgress.style.backgroundColor = "#ef4444";
+    } else if (time <= 20) {
+        timeProgress.style.backgroundColor = "#f59e0b";
+    } else {
+        timeProgress.style.backgroundColor = "#22c55e";
+    }
+}
+
+function gameOver() {
+    clearInterval(timer);
+    gameEnded = true;
+
+    selected = null;
+    showMessage("Game Over - Hết thời gian!");
+}
+
 
 function createBoard() {
     let values = [];
@@ -192,6 +245,7 @@ function checkWin() {
     return true;
 }
 function winLevel() {
+    clearInterval(timer);
     gameEnded = true;
 
     score += 50;
@@ -210,8 +264,18 @@ function winLevel() {
 
         gameEnded = false;
 
+        time = 300 - (level - 1) * 10;
+
+        if (time < 60) {
+            time = 60;
+        }
+
+        maxTime = time;
+        updateTime();
+
         createBoard();
         renderBoard();
+        startTimer();
 
         showMessage("Level " + level + ": Hãy chọn 2 hình giống nhau");
     }, 1500);
@@ -338,7 +402,7 @@ function updateLevel() {
 
 function getKey(row, col, direction) {
     return row + "-" + col + "-" + direction;
-}git diff
+}
 
 function canGo(row, col, start, end) {
     if (
