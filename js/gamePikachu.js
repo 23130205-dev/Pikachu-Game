@@ -1,5 +1,6 @@
 const ROWS = 8;
 const COLUMNS = 14;
+const MAX_LEVEL = 5;
 
 const images = [
     "images/pikachu1.jpg",
@@ -17,10 +18,12 @@ const images = [
 
 let board = [];
 let score = 0;
+let level = 1;
 let selected = null;
 
 const boardElement = document.getElementById("board");
 const scoreElement = document.getElementById("score");
+const levelElement = document.getElementById("level");
 const messageElement = document.getElementById("message");
 const pathElement = document.getElementById("path");
 
@@ -28,13 +31,16 @@ startGame();
 
 function startGame() {
     score = 0;
+    level = 1;
     selected = null;
 
     updateScore();
+    updateLevel();
+
     createBoard();
     renderBoard();
 
-    showMessage("Hãy chọn 2 hình giống nhau");
+     showMessage("Level " + level + ": Hãy chọn 2 hình giống nhau");
 }
 
 function createBoard() {
@@ -160,13 +166,55 @@ function removePair(first, second) {
     board[second.row][second.col] = -1;
 
     score += 10;
-
     updateScore();
 
-    removeSelected();
+    clearPath();
+    selected = null;
     renderBoard();
 
+    if (checkWin()) {
+        winLevel();
+        return;
+    }
+
     showMessage("Đã nối thành công");
+}
+
+function checkWin() {
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLUMNS; col++) {
+            if (board[row][col] !== -1) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+function winLevel() {
+    gameEnded = true;
+
+    score += 50;
+    updateScore();
+
+    if (level === MAX_LEVEL) {
+        showMessage("Bạn đã hoàn thành tất cả các level");
+        return;
+    }
+
+    showMessage("Hoàn thành Level " + level);
+
+    setTimeout(function () {
+        level++;
+        updateLevel();
+
+        gameEnded = false;
+
+        createBoard();
+        renderBoard();
+
+        showMessage("Level " + level + ": Hãy chọn 2 hình giống nhau");
+    }, 1500);
 }
 
 function findPath(start, end) {
@@ -284,9 +332,13 @@ function findPath(start, end) {
     return null;
 }
 
+function updateLevel() {
+    levelElement.textContent = level;
+}
+
 function getKey(row, col, direction) {
     return row + "-" + col + "-" + direction;
-}
+}git diff
 
 function canGo(row, col, start, end) {
     if (
