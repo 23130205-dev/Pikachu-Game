@@ -28,10 +28,12 @@ startGame();
 function startGame() {
     score = 0;
     selected = null;
+
     updateScore();
     createBoard();
     renderBoard();
-    showMessage("Hãy chọn 2 hình giống nhau để nối");
+
+    showMessage("Hãy chọn 2 hình giống nhau");
 }
 
 function createBoard() {
@@ -40,6 +42,7 @@ function createBoard() {
 
     for (let i = 0; i < total / 2; i++) {
         let type = i % images.length;
+
         values.push(type);
         values.push(type);
     }
@@ -90,6 +93,7 @@ function renderBoard() {
             }
 
             cell.addEventListener("click", clickCell);
+
             boardElement.appendChild(cell);
         }
     }
@@ -112,11 +116,13 @@ function clickCell(event) {
         };
 
         cell.classList.add("selected");
+
         return;
     }
 
     if (selected.row === row && selected.col === col) {
         removeSelected();
+
         return;
     }
 
@@ -127,20 +133,29 @@ function clickCell(event) {
 }
 
 function checkPair(first, second) {
-    if (board[first.row][first.col] === board[second.row][second.col]) {
-        board[first.row][first.col] = -1;
-        board[second.row][second.col] = -1;
-
-        score += 10;
-        updateScore();
-        removeSelected();
-        renderBoard();
-
-        showMessage("Đã nối thành công");
-    } else {
+    if (board[first.row][first.col] !== board[second.row][second.col]) {
         showMessage("Hai hình không giống nhau");
+
         removeSelected();
+
+        return;
     }
+
+    removePair(first, second);
+}
+
+function removePair(first, second) {
+    board[first.row][first.col] = -1;
+    board[second.row][second.col] = -1;
+
+    score += 10;
+
+    updateScore();
+
+    removeSelected();
+    renderBoard();
+
+    showMessage("Đã nối thành công");
 }
 
 function removeSelected() {
