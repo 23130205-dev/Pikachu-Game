@@ -1,0 +1,263 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background-color: #222;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.game-container {
+    width: 980px;
+    padding: 15px;
+    background-color: #181818;
+    border: 2px solid #555;
+    overflow: hidden;
+}
+
+.top-container {
+    height: 55px;
+    margin-bottom: 10px;
+    background-color: #111;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.score {
+    color: #ffeb3b;
+    font-weight: bold;
+}
+
+.lives {
+    color: #ef4444;
+    font-weight: bold;
+    gap: 6px;
+}
+
+.lives .heart-icon {
+    font-size: 20px;
+    color: #ef4444;
+    transition: transform 0.3s ease, opacity 0.3s, filter 0.3s ease;
+}
+
+.lives .heart-icon.lost {
+    opacity: 0.2;
+    transform: scale(0.8);
+    filter: grayscale(100%);
+}
+
+.lives .heart-icon.hidden {
+    display: none;
+}
+
+.level {
+    color: white;
+    font-weight: bold;
+    border: 2px solid #ffffff;
+    border-radius: 12px;
+    padding: 10px 20px;
+}
+
+.time {
+    color: #14b8a6;
+    font-weight: bold;
+}
+
+.main-container {
+    display: flex;
+    gap: 12px;
+    align-content: center;
+}
+
+.menu {
+    width: 85px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.menu button {
+    position: relative;
+    width: 85px;
+    height: 55px;
+    border: 1px solid #39727a;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #164e63, #0f766e);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35);
+    transition: all 0.3s ease;
+}
+
+.menu button:hover {
+    background: linear-gradient(135deg, #0891b2, #14b8a6);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.45);
+}
+
+.menu button:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.menu button.hint-button {
+    background: linear-gradient(135deg, #e3c084, #f1b825);
+    color: #222;
+    border-color: #f1b825;
+}
+
+menu button.hint-button:hover {
+    background: linear-gradient(135deg, #fbbf24, #fde047);
+}
+
+.hint-count {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #ef4444;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    border: 2px solid #181818;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.board-box {
+    position: relative;
+    width: 900px;
+    height: 530px;
+    padding: 0;
+    background-image: url("images/background.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.time-bar {
+    position: absolute;
+    top: -12px;
+    left: 0;
+    width: 100%;
+    height: 8px;
+    background-color: #333;
+    border-radius: 4px;
+    overflow: hidden;
+    z-index: 10;
+}
+
+.time-progress {
+    width: 100%;
+    height: 100%;
+    background-color: #22c55e;
+    transition: width 1s linear, background-color 0.3s;
+}
+
+.board {
+    /*width: 866px;*/
+    /*height: 494px;*/
+    display: grid;
+    grid-template-columns: repeat(14, 60px);
+    grid-template-rows: repeat(8, 60px);
+    gap: 2px;
+    position: relative;
+    z-index: 2;
+}
+
+.cell {
+    width: 60px;
+    height: 60px;
+    background-color: #fabbda;
+    border: 1px solid #ee82bb;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.cell:hover {
+    background-color: #ffe3f1;
+}
+
+.cell.selected {
+    background-color: #8cff8c;
+    border: 3px solid #20a020;
+}
+
+.cell img {
+    width: 54px;
+    height: 54px;
+    object-fit: contain;
+    user-select: none;
+    pointer-events: none;
+}
+
+.cell.hint {
+    background-color: yellow;
+    border: 3px solid red;
+}
+
+.path {
+    position: absolute;
+    left: -3px;
+    top: -3px;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.path-line {
+    fill: none;
+    stroke: #00ff00;
+    stroke-width: 5;
+    stroke-linecap: square;
+    stroke-linejoin: round;
+}
+
+.message {
+    height: 35px;
+    margin-top: 10px;
+    color: white;
+    text-align: center;
+    font-size: 16px;
+    line-height: 35px;
+}
+
+.game-container.paused .board {
+    opacity: 0.25;
+}
+
+@media (max-width: 850px) {
+    .game-container {
+        transform: scale(0.8);
+    }
+}
+
+@media (max-width: 650px) {
+    .game-container {
+        transform: scale(0.6);
+    }
+}
