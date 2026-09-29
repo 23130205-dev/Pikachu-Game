@@ -25,6 +25,7 @@ let maxTime = 300;
 let timer = null;
 let gameEnded = false;
 let selected = null;
+let hintCount = 3;
 
 const boardElement = document.getElementById("board");
 const scoreElement = document.getElementById("score");
@@ -33,25 +34,34 @@ const messageElement = document.getElementById("message");
 const pathElement = document.getElementById("path");
 const timeElement = document.getElementById("time");
 const timeProgress = document.getElementById("timeProgress");
+const hintButton = document.getElementById("hintButton");
+const shuffleButton = document.getElementById("shuffleButton");
 
 startGame();
 
 function startGame() {
     clearInterval(timer);
+
     score = 0;
     level = 1;
     lives = 6;
     selected = null;
     gameEnded = false;
+    hintCount = 3;
+
     updateScore();
     updateLevel();
     updateLive();
+    updateHintCount();
+
     time = 300;
     maxTime = 300;
+
     updateTime();
     createBoard();
     renderBoard();
     startTimer();
+
     showMessage("Level " + level + ": Hãy chọn 2 hình giống nhau");
 }
 
@@ -134,6 +144,7 @@ function createBoard() {
 
     for (let i = 0; i < total / 2; i++) {
         let type = i % images.length;
+
         values.push(type);
         values.push(type);
     }
@@ -156,6 +167,7 @@ function createBoard() {
 function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
         let j = Math.floor(Math.random() * (i + 1));
+
         let temp = array[i];
         array[i] = array[j];
         array[j] = temp;
@@ -175,8 +187,10 @@ function renderBoard() {
 
             if (board[row][col] !== -1) {
                 let image = document.createElement("img");
+
                 image.src = images[board[row][col]];
                 image.alt = "pikachu";
+
                 cell.appendChild(image);
             }
 
@@ -243,8 +257,10 @@ function checkPair(first, second) {
 function removePair(first, second) {
     board[first.row][first.col] = -1;
     board[second.row][second.col] = -1;
+
     score += 10;
     updateScore();
+
     clearPath();
     selected = null;
     renderBoard();
@@ -254,7 +270,17 @@ function removePair(first, second) {
         return;
     }
 
-    showMessage("Đã nối thành công");
+    if (!hasMove()) {
+        showMessage("Không còn nước đi");
+
+        setTimeout(function () {
+            if (!gameEnded) {
+                shuffleBoard();
+            }
+        }, 800);
+    } else {
+        showMessage("Đã nối thành công");
+    }
 }
 
 function checkWin() {
@@ -272,6 +298,7 @@ function checkWin() {
 function winLevel() {
     clearInterval(timer);
     gameEnded = true;
+
     score += 50;
     updateScore();
 
@@ -285,9 +312,14 @@ function winLevel() {
     setTimeout(function () {
         level++;
         updateLevel();
+
         gameEnded = false;
         lives = 6 - (level - 1);
+        hintCount = Math.max(0, 3 - (level - 1));
+
         updateLive();
+        updateHintCount();
+
         time = 300 - (level - 1) * 10;
 
         if (time < 60) {
@@ -296,9 +328,11 @@ function winLevel() {
 
         maxTime = time;
         updateTime();
+
         createBoard();
         renderBoard();
         startTimer();
+
         showMessage("Level " + level + ": Hãy chọn 2 hình giống nhau");
     }, 1500);
 }
@@ -437,6 +471,7 @@ function drawPath(path) {
 
     for (let i = 0; i < path.length; i++) {
         let point = path[i];
+
         let x = point.col * cellSize + 31;
         let y = point.row * cellSize + 31;
 
@@ -490,3 +525,194 @@ function updateScore() {
 function showMessage(text) {
     messageElement.textContent = text;
 }
+
+function hasMove() {
+    for (let row1 = 0; row1 < ROWS; row1++) {
+        for (let col1 = 0; col1 < COLUMNS; col1++) {
+            if (board[row1][col1] === -1) {
+                continue;
+            }
+
+            for (let row2 = 0; row2 < ROWS; row2++) {
+                for (let col2 = 0; col2 < COLUMNS; col2++) {
+                    if (row1 === row2 && col1 === col2) {
+                        continue;
+                    }
+
+                    if (board[row1][col1] !== board[row2][col2]) {
+                        continue;
+                    }
+
+                    let path = findPath(
+                        {
+                            row: row1,
+                            col: col1
+                        },
+                        {
+                            row: row2,
+                            col: col2
+                        }
+                    );
+
+                    if (path !== null) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+function shuffleBoardData() {
+    let values = [];
+
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLUMNS; col++) {
+            if (board[row][col] !== -1) {
+                values.push(board[row][col]);
+            }
+        }
+    }
+
+    shuffle(values);
+
+    let index = 0;
+
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLUMNS; col++) {
+            if (board[row][col] !== -1) {
+                board[row][col] = values[index];
+                index++;
+            }
+        }
+    }
+}
+
+function shuffleBoard() {
+    if (gameEnded) {
+        return;
+    }
+
+    clearPath();
+    removeSelected();
+
+    shuffleBoardData();
+
+    while (!hasMove()) {
+        shuffleBoardData();
+    }
+
+    renderBoard();
+    showMessage("Đã xáo trộn bàn chơi");
+}
+
+function showHint() {
+    if (gameEnded) {
+        return false;
+    }
+
+    for (let row1 = 0; row1 < ROWS; row1++) {
+        for (let col1 = 0; col1 < COLUMNS; col1++) {
+            if (board[row1][col1] === -1) {
+                continue;
+            }
+
+            for (let row2 = 0; row2 < ROWS; row2++) {
+                for (let col2 = 0; col2 < COLUMNS; col2++) {
+                    if (row1 === row2 && col1 === col2) {
+                        continue;
+                    }
+
+                    if (board[row1][col1] !== board[row2][col2]) {
+                        continue;
+                    }
+
+                    let path = findPath(
+                        {
+                            row: row1,
+                            col: col1
+                        },
+                        {
+                            row: row2,
+                            col: col2
+                        }
+                    );
+
+                    if (path !== null) {
+                        showHintCells(
+                            row1,
+                            col1,
+                            row2,
+                            col2
+                        );
+
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    showMessage("Không tìm thấy cặp hình phù hợp");
+    return false;
+}
+
+function showHintCells(row1, col1, row2, col2) {
+    let cells = document.querySelectorAll(".cell");
+
+    cells.forEach(function (cell) {
+        let row = Number(cell.dataset.row);
+        let col = Number(cell.dataset.col);
+
+        if (
+            (row === row1 && col === col1) ||
+            (row === row2 && col === col2)
+        ) {
+            cell.classList.add("hint");
+
+            setTimeout(function () {
+                cell.classList.remove("hint");
+            }, 1500);
+        }
+    });
+
+    showMessage("Hai hình được đánh dấu là một cặp");
+}
+
+function updateHintCount() {
+    let hintCountElement = document.querySelector(".hint-count");
+
+    if (hintCountElement) {
+        hintCountElement.textContent = hintCount;
+    }
+}
+
+hintButton.addEventListener("click", function () {
+    if (gameEnded) {
+        showMessage("Game đã kết thúc");
+        return;
+    }
+
+    if (hintCount <= 0) {
+        showMessage("Bạn đã hết lượt gợi ý");
+        return;
+    }
+
+    let hasHint = showHint();
+
+    if (hasHint) {
+        hintCount--;
+        updateHintCount();
+    }
+});
+
+shuffleButton.addEventListener("click", function () {
+    if (gameEnded) {
+        showMessage("Game đã kết thúc");
+        return;
+    }
+
+    shuffleBoard();
+});
