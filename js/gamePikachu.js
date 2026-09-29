@@ -22,6 +22,7 @@ let selected = null;
 const boardElement = document.getElementById("board");
 const scoreElement = document.getElementById("score");
 const messageElement = document.getElementById("message");
+const pathElement = document.getElementById("path");
 
 startGame();
 
@@ -135,13 +136,22 @@ function clickCell(event) {
 function checkPair(first, second) {
     if (board[first.row][first.col] !== board[second.row][second.col]) {
         showMessage("Hai hình không giống nhau");
-
         removeSelected();
-
         return;
     }
 
-    removePair(first, second);
+    let path = findPath(first, second);
+
+    if (path !== null) {
+        drawPath(path);
+
+        setTimeout(function () {
+            removePair(first, second);
+        }, 250);
+    } else {
+        showMessage("Không thể nối hai hình này");
+        removeSelected();
+    }
 }
 
 function removePair(first, second) {
@@ -156,6 +166,191 @@ function removePair(first, second) {
     renderBoard();
 
     showMessage("Đã nối thành công");
+}
+
+function findPath(start, end) {
+    const directions = [
+        [-1, 0],
+        [0, 1],
+        [1, 0],
+        [0, -1]
+    ];
+
+    let queue = [];
+    let visited = {};
+
+    for (let direction = 0; direction < 4; direction++) {
+        queue.push({
+            row: start.row,
+            col: start.col,
+            direction: direction,
+            turns: 0,
+            path: [
+                {
+                    row: start.row,
+                    col: start.col
+                }
+            ]
+        });
+
+        let key = getKey(
+            start.row,
+            start.col,
+            direction
+        );
+
+        visited[key] = 0;
+    }
+
+    while (queue.length > 0) {
+        let current = queue.shift();
+
+        for (let newDirection = 0; newDirection < 4; newDirection++) {
+            let turns = current.turns;
+
+            if (newDirection !== current.direction) {
+                turns++;
+            }
+
+            if (turns > 2) {
+                continue;
+            }
+
+            let newRow =
+                current.row +
+                directions[newDirection][0];
+
+            let newCol =
+                current.col +
+                directions[newDirection][1];
+
+            while (
+                newRow >= -1 &&
+                newRow <= ROWS &&
+                newCol >= -1 &&
+                newCol <= COLUMNS
+            ) {
+                if (
+                    newRow === end.row &&
+                    newCol === end.col
+                ) {
+                    return [
+                        ...current.path,
+                        {
+                            row: newRow,
+                            col: newCol
+                        }
+                    ];
+                }
+
+                if (!canGo(newRow, newCol, start, end)) {
+                    break;
+                }
+
+                let key = getKey(
+                    newRow,
+                    newCol,
+                    newDirection
+                );
+
+                if (
+                    visited[key] === undefined ||
+                    turns < visited[key]
+                ) {
+                    visited[key] = turns;
+
+                    queue.push({
+                        row: newRow,
+                        col: newCol,
+                        direction: newDirection,
+                        turns: turns,
+                        path: [
+                            ...current.path,
+                            {
+                                row: newRow,
+                                col: newCol
+                            }
+                        ]
+                    });
+                }
+
+                newRow += directions[newDirection][0];
+                newCol += directions[newDirection][1];
+            }
+        }
+    }
+
+    return null;
+}
+
+function getKey(row, col, direction) {
+    return row + "-" + col + "-" + direction;
+}
+
+function canGo(row, col, start, end) {
+    if (
+        row < 0 ||
+        row >= ROWS ||
+        col < 0 ||
+        col >= COLUMNS
+    ) {
+        return true;
+    }
+
+    if (
+        (row === start.row && col === start.col) ||
+        (row === end.row && col === end.col)
+    ) {
+        return true;
+    }
+
+    return board[row][col] === -1;
+}
+
+function drawPath(path) {
+    clearPath();
+
+    const cellSize = 62;
+    let points = "";
+
+    for (let i = 0; i < path.length; i++) {
+        let point = path[i];
+
+        let x = point.col * cellSize + 31;
+        let y = point.row * cellSize + 31;
+
+        if (point.col === -1) {
+            x = 0;
+        }
+
+        if (point.col === COLUMNS) {
+            x = COLUMNS * cellSize;
+        }
+
+        if (point.row === -1) {
+            y = 0;
+        }
+
+        if (point.row === ROWS) {
+            y = ROWS * cellSize;
+        }
+
+        points += x + "," + y + " ";
+    }
+
+    let line = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "polyline"
+    );
+
+    line.setAttribute("points", points);
+    line.setAttribute("class", "path-line");
+
+    pathElement.appendChild(line);
+}
+
+function clearPath() {
+    pathElement.innerHTML = "";
 }
 
 function removeSelected() {
