@@ -19,6 +19,7 @@ const images = [
 let board = [];
 let score = 0;
 let level = 1;
+let lives = 6;
 let time = 300;
 let maxTime = 300;
 let timer = null;
@@ -36,23 +37,56 @@ const timeProgress = document.getElementById("timeProgress");
 startGame();
 
 function startGame() {
+    clearInterval(timer);
     score = 0;
     level = 1;
+    lives = 6;
     selected = null;
     gameEnded = false;
-
     updateScore();
     updateLevel();
-
+    updateLive();
     time = 300;
     maxTime = 300;
     updateTime();
-
     createBoard();
     renderBoard();
     startTimer();
-
     showMessage("Level " + level + ": Hãy chọn 2 hình giống nhau");
+}
+
+function updateLive() {
+    const maxLivesThisLevel = 6 - (level - 1);
+    const heartIcons = document.querySelectorAll("#lives .heart-icon");
+
+    heartIcons.forEach(function (icon, index) {
+        if (index < maxLivesThisLevel) {
+            icon.classList.remove("hidden");
+
+            if (index < lives) {
+                icon.classList.remove("lost");
+            } else {
+                icon.classList.add("lost");
+            }
+        } else {
+            icon.classList.add("hidden");
+        }
+    });
+}
+
+function handleWrongSelection(message) {
+    lives--;
+    updateLive();
+
+    if (lives <= 0) {
+        gameEnded = true;
+        clearInterval(timer);
+        removeSelected();
+        showMessage("Bạn đã hết mạng! GAME OVER");
+    } else {
+        showMessage(message + "! Bạn còn " + lives + " mạng.");
+        removeSelected();
+    }
 }
 
 function startTimer() {
@@ -90,11 +124,9 @@ function updateTime() {
 function gameOver() {
     clearInterval(timer);
     gameEnded = true;
-
-    selected = null;
+    removeSelected();
     showMessage("Game Over - Hết thời gian!");
 }
-
 
 function createBoard() {
     let values = [];
@@ -102,7 +134,6 @@ function createBoard() {
 
     for (let i = 0; i < total / 2; i++) {
         let type = i % images.length;
-
         values.push(type);
         values.push(type);
     }
@@ -125,7 +156,6 @@ function createBoard() {
 function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
         let j = Math.floor(Math.random() * (i + 1));
-
         let temp = array[i];
         array[i] = array[j];
         array[j] = temp;
@@ -145,23 +175,23 @@ function renderBoard() {
 
             if (board[row][col] !== -1) {
                 let image = document.createElement("img");
-
                 image.src = images[board[row][col]];
                 image.alt = "pikachu";
-
                 cell.appendChild(image);
             }
 
             cell.addEventListener("click", clickCell);
-
             boardElement.appendChild(cell);
         }
     }
 }
 
 function clickCell(event) {
-    let cell = event.currentTarget;
+    if (gameEnded) {
+        return;
+    }
 
+    let cell = event.currentTarget;
     let row = Number(cell.dataset.row);
     let col = Number(cell.dataset.col);
 
@@ -176,13 +206,11 @@ function clickCell(event) {
         };
 
         cell.classList.add("selected");
-
         return;
     }
 
     if (selected.row === row && selected.col === col) {
         removeSelected();
-
         return;
     }
 
@@ -194,8 +222,7 @@ function clickCell(event) {
 
 function checkPair(first, second) {
     if (board[first.row][first.col] !== board[second.row][second.col]) {
-        showMessage("Hai hình không giống nhau");
-        removeSelected();
+        handleWrongSelection("Hai hình không giống nhau");
         return;
     }
 
@@ -209,18 +236,15 @@ function checkPair(first, second) {
             removePair(first, second);
         }, 100);
     } else {
-        showMessage("Không thể nối hai hình này");
-        removeSelected();
+        handleWrongSelection("Không thể nối hai hình này");
     }
 }
 
 function removePair(first, second) {
     board[first.row][first.col] = -1;
     board[second.row][second.col] = -1;
-
     score += 10;
     updateScore();
-
     clearPath();
     selected = null;
     renderBoard();
@@ -244,10 +268,10 @@ function checkWin() {
 
     return true;
 }
+
 function winLevel() {
     clearInterval(timer);
     gameEnded = true;
-
     score += 50;
     updateScore();
 
@@ -261,9 +285,9 @@ function winLevel() {
     setTimeout(function () {
         level++;
         updateLevel();
-
         gameEnded = false;
-
+        lives = 6 - (level - 1);
+        updateLive();
         time = 300 - (level - 1) * 10;
 
         if (time < 60) {
@@ -272,11 +296,9 @@ function winLevel() {
 
         maxTime = time;
         updateTime();
-
         createBoard();
         renderBoard();
         startTimer();
-
         showMessage("Level " + level + ": Hãy chọn 2 hình giống nhau");
     }, 1500);
 }
@@ -306,12 +328,7 @@ function findPath(start, end) {
             ]
         });
 
-        let key = getKey(
-            start.row,
-            start.col,
-            direction
-        );
-
+        let key = getKey(start.row, start.col, direction);
         visited[key] = 0;
     }
 
@@ -329,13 +346,8 @@ function findPath(start, end) {
                 continue;
             }
 
-            let newRow =
-                current.row +
-                directions[newDirection][0];
-
-            let newCol =
-                current.col +
-                directions[newDirection][1];
+            let newRow = current.row + directions[newDirection][0];
+            let newCol = current.col + directions[newDirection][1];
 
             while (
                 newRow >= -1 &&
@@ -343,10 +355,7 @@ function findPath(start, end) {
                 newCol >= -1 &&
                 newCol <= COLUMNS
             ) {
-                if (
-                    newRow === end.row &&
-                    newCol === end.col
-                ) {
+                if (newRow === end.row && newCol === end.col) {
                     return [
                         ...current.path,
                         {
@@ -360,11 +369,7 @@ function findPath(start, end) {
                     break;
                 }
 
-                let key = getKey(
-                    newRow,
-                    newCol,
-                    newDirection
-                );
+                let key = getKey(newRow, newCol, newDirection);
 
                 if (
                     visited[key] === undefined ||
@@ -432,7 +437,6 @@ function drawPath(path) {
 
     for (let i = 0; i < path.length; i++) {
         let point = path[i];
-
         let x = point.col * cellSize + 31;
         let y = point.row * cellSize + 31;
 
@@ -462,7 +466,6 @@ function drawPath(path) {
 
     line.setAttribute("points", points);
     line.setAttribute("class", "path-line");
-
     pathElement.appendChild(line);
 }
 
