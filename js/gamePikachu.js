@@ -788,6 +788,9 @@ function updateShuffleCount() {
         }
     }
 }
+newButton.addEventListener("click", function () {
+    startGame();
+});
 
 hintButton.addEventListener("click", function () {
     if (gameEnded) {
@@ -855,4 +858,17 @@ soundButton.addEventListener("click", function () {
     } else {
         showMessage("Đã tắt âm thanh");
     }
+});
+
+exitButton.addEventListener("click", function () {
+    clearInterval(timer);
+
+    gameEnded = true;
+    paused = false;
+    selected = null;
+
+    clearPath();
+    removeSelected();
+    boardElement.innerHTML = "";
+    showMessage("Bạn đã thoát khỏi game");
 });

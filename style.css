@@ -119,7 +119,7 @@ body {
     border-color: #f1b825;
 }
 
-menu button.hint-button:hover {
+.menu button.hint-button:hover {
     background: linear-gradient(135deg, #fbbf24, #fde047);
 }
 
