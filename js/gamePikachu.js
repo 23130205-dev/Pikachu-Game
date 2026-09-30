@@ -34,12 +34,14 @@ let board = [];
 let score = 0;
 let level = 1;
 let lives = 6;
+let hintCount = 3;
 let time = 300;
 let maxTime = 300;
 let timer = null;
-let gameEnded = false;
 let selected = null;
-let hintCount = 3;
+let gameEnded = false;
+let paused = false;
+let sound = true;
 
 const boardElement = document.getElementById("board");
 const scoreElement = document.getElementById("score");
@@ -48,10 +50,29 @@ const messageElement = document.getElementById("message");
 const pathElement = document.getElementById("path");
 const timeElement = document.getElementById("time");
 const timeProgress = document.getElementById("timeProgress");
+
+const clickSound = document.getElementById("clickSound");
+const correctSound = document.getElementById("correctSound");
+const wrongSound = document.getElementById("wrongSound");
+const levelUpSound = document.getElementById("levelUpSound");
+
+const newButton = document.getElementById("newButton");
 const hintButton = document.getElementById("hintButton");
 const shuffleButton = document.getElementById("shuffleButton");
+const pauseButton = document.getElementById("pauseButton");
+const soundButton = document.getElementById("soundButton");
+const exitButton = document.getElementById("exitButton");
 
 startGame();
+
+function playSound(audio){
+if(!sound || !audio){
+return;
+}
+audio.currentTime = 0;
+    audio.play().catch(function () {
+    });
+}
 
 function startGame() {
     clearInterval(timer);
@@ -62,11 +83,16 @@ function startGame() {
     selected = null;
     gameEnded = false;
     hintCount = 3;
+    paused = false;
 
     updateScore();
     updateLevel();
     updateLive();
     updateHintCount();
+    updatePauseButton();
+    updateSoundButton();
+
+    boardElement.classList.remove("game-exited")
 
     time = 300;
     maxTime = 300;
@@ -101,6 +127,7 @@ function updateLive() {
 function handleWrongSelection(message) {
     lives--;
     updateLive();
+    playSound(wrongSound);
 
     if (lives <= 0) {
         gameEnded = true;
@@ -117,7 +144,7 @@ function startTimer() {
     clearInterval(timer);
 
     timer = setInterval(function () {
-        if (gameEnded) {
+        if (paused || gameEnded) {
             return;
         }
 
@@ -215,7 +242,7 @@ function renderBoard() {
 }
 
 function clickCell(event) {
-    if (gameEnded) {
+    if (paused || gameEnded) {
         return;
     }
 
@@ -257,6 +284,7 @@ function checkPair(first, second) {
     let path = findPath(first, second);
 
     if (path !== null) {
+        playSound(correctSound);
         drawPath(path);
 
         setTimeout(function () {
@@ -305,7 +333,6 @@ function checkWin() {
             }
         }
     }
-
     return true;
 }
 
@@ -315,6 +342,7 @@ function winLevel() {
 
     score += 50;
     updateScore();
+    playSound(levelUpSound);
 
     if (level === MAX_LEVEL) {
         showMessage("Bạn đã hoàn thành tất cả các level");
@@ -328,11 +356,13 @@ function winLevel() {
         updateLevel();
 
         gameEnded = false;
+        paused = false;
         lives = 6 - (level - 1);
         hintCount = Math.max(0, 3 - (level - 1));
 
         updateLive();
         updateHintCount();
+        updatePauseButton();
 
         time = 300 - (level - 1) * 10;
 
@@ -341,8 +371,8 @@ function winLevel() {
         }
 
         maxTime = time;
-        updateTime();
 
+        updateTime();
         createBoard();
         renderBoard();
         startTimer();
@@ -589,11 +619,8 @@ function shuffleBoardData() {
             }
         }
     }
-
     shuffle(values);
-
     let index = 0;
-
     for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLUMNS; col++) {
             if (board[row][col] !== -1) {
@@ -605,7 +632,7 @@ function shuffleBoardData() {
 }
 
 function shuffleBoard() {
-    if (gameEnded) {
+    if (paused || gameEnded) {
         return;
     }
 
@@ -623,7 +650,7 @@ function shuffleBoard() {
 }
 
 function showHint() {
-    if (gameEnded) {
+    if (paused || gameEnded) {
         return false;
     }
 
@@ -695,6 +722,40 @@ function showHintCells(row1, col1, row2, col2) {
     showMessage("Hai hình được đánh dấu là một cặp");
 }
 
+function updatePauseButton() {
+    let icon = pauseButton.querySelector("i");
+    let text = pauseButton.querySelector("span");
+
+    if (!icon || !text) {
+        return;
+    }
+
+    if (paused) {
+        icon.className = "fa-solid fa-play";
+        text.textContent = "Tiếp tục";
+    } else {
+        icon.className = "fa-solid fa-pause";
+        text.textContent = "Tạm dừng";
+    }
+}
+
+function updateSoundButton() {
+    let icon = soundButton.querySelector("i");
+    let text = soundButton.querySelector("span");
+
+    if (!icon || !text) {
+        return;
+    }
+
+    if (sound) {
+        icon.className = "fa-solid fa-volume-high";
+        text.textContent = "Âm thanh";
+    } else {
+        icon.className = "fa-solid fa-volume-xmark";
+        text.textContent = "Tắt âm thanh";
+    }
+}
+
 function updateHintCount() {
     let hintCountElement = document.querySelector(".hint-count");
 
@@ -719,6 +780,47 @@ hintButton.addEventListener("click", function () {
     if (hasHint) {
         hintCount--;
         updateHintCount();
+    }
+});
+
+shuffleButton.addEventListener("click", function () {
+    if (paused) {
+        showMessage("Game đang tạm dừng");
+        return;
+    }
+
+    if (gameEnded) {
+        showMessage("Game đã kết thúc");
+        return;
+    }
+
+    shuffleBoard();
+});
+
+pauseButton.addEventListener("click", function () {
+    if (gameEnded) {
+        return;
+    }
+
+    paused = !paused;
+    updatePauseButton();
+
+    if (paused) {
+        showMessage("Game đang tạm dừng");
+    } else {
+        showMessage("Tiếp tục chơi");
+    }
+});
+
+soundButton.addEventListener("click", function () {
+    sound = !sound;
+
+    updateSoundButton();
+
+    if (sound) {
+        showMessage("Đã bật âm thanh");
+    } else {
+        showMessage("Đã tắt âm thanh");
     }
 });
 
