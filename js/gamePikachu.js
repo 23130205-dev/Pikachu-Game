@@ -35,6 +35,7 @@ let score = 0;
 let level = 1;
 let lives = 6;
 let hintCount = 3;
+let shuffleCount = 3;
 let time = 300;
 let maxTime = 300;
 let timer = null;
@@ -83,12 +84,14 @@ function startGame() {
     selected = null;
     gameEnded = false;
     hintCount = 3;
+    shuffleCount = 3;
     paused = false;
 
     updateScore();
     updateLevel();
     updateLive();
     updateHintCount();
+    updateShuffleCount();
     updatePauseButton();
     updateSoundButton();
 
@@ -359,6 +362,11 @@ function winLevel() {
         paused = false;
         lives = 6 - (level - 1);
         hintCount = Math.max(0, 3 - (level - 1));
+        if (level === 2 || level === 3) {
+            shuffleCount = 2;
+        } else {
+            shuffleCount = 1;
+        }
 
         updateLive();
         updateHintCount();
@@ -764,6 +772,20 @@ function updateHintCount() {
     }
 }
 
+function updateShuffleCount() {
+    let shuffleCountElement = document.querySelector(".shuffle-count");
+
+    if (shuffleCountElement) {
+        shuffleCountElement.textContent = shuffleCount;
+
+        if (shuffleCount <= 0) {
+            shuffleCountElement.classList.add("empty");
+        } else {
+            shuffleCountElement.classList.remove("empty");
+        }
+    }
+}
+
 hintButton.addEventListener("click", function () {
     if (gameEnded) {
         showMessage("Game đã kết thúc");
@@ -784,15 +806,23 @@ hintButton.addEventListener("click", function () {
 });
 
 shuffleButton.addEventListener("click", function () {
+    if (gameEnded) {
+        showMessage("Game đã kết thúc");
+        return;
+    }
+
     if (paused) {
         showMessage("Game đang tạm dừng");
         return;
     }
 
-    if (gameEnded) {
-        showMessage("Game đã kết thúc");
+    if (shuffleCount <= 0) {
+        showMessage("Bạn đã hết lượt xáo trộn");
         return;
     }
+
+    shuffleCount--;
+    updateShuffleCount();
 
     shuffleBoard();
 });
@@ -822,13 +852,4 @@ soundButton.addEventListener("click", function () {
     } else {
         showMessage("Đã tắt âm thanh");
     }
-});
-
-shuffleButton.addEventListener("click", function () {
-    if (gameEnded) {
-        showMessage("Game đã kết thúc");
-        return;
-    }
-
-    shuffleBoard();
 });
