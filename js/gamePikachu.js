@@ -2,18 +2,32 @@ const ROWS = 8;
 const COLUMNS = 14;
 const MAX_LEVEL = 5;
 
+//const images = [
+//    "images/pikachu1.jpg",
+//    "images/pikachu2.jpg",
+//    "images/pikachu3.jpg",
+//    "images/pikachu4.jpg",
+//    "images/pikachu5.jpg",
+//    "images/pikachu6.jpg",
+//    "images/pikachu7.jpg",
+//    "images/pikachu8.jpg",
+//    "images/pikachu9.jpg",
+//    "images/pikachu10.jpg",
+//    "images/pikachu11.jpg"
+//];
+
 const images = [
-    "images/pikachu1.jpg",
-    "images/pikachu2.jpg",
-    "images/pikachu3.jpg",
-    "images/pikachu4.jpg",
-    "images/pikachu5.jpg",
-    "images/pikachu6.jpg",
-    "images/pikachu7.jpg",
-    "images/pikachu8.jpg",
-    "images/pikachu9.jpg",
-    "images/pikachu10.jpg",
-    "images/pikachu11.jpg"
+    "images/pikachu1.png",
+    "images/pikachu2.png",
+    "images/pikachu3.png",
+    "images/pikachu4.png",
+    "images/pikachu5.png",
+    "images/pikachu6.png",
+    "images/pikachu7.png",
+    "images/pikachu8.png",
+    "images/pikachu9.png",
+    "images/pikachu10.png",
+    "images/pikachu11.png"
 ];
 
 let board = [];
