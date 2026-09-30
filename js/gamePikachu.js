@@ -56,6 +56,7 @@ const clickSound = document.getElementById("clickSound");
 const correctSound = document.getElementById("correctSound");
 const wrongSound = document.getElementById("wrongSound");
 const levelUpSound = document.getElementById("levelUpSound");
+const shuffleSound = document.getElementById("shuffleSound");
 
 const newButton = document.getElementById("newButton");
 const hintButton = document.getElementById("hintButton");
@@ -646,6 +647,8 @@ function shuffleBoard() {
 
     clearPath();
     removeSelected();
+
+    playSound(shuffleSound);
 
     shuffleBoardData();
 
