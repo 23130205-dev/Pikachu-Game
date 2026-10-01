@@ -141,6 +141,76 @@ body {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
+.level-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.level-modal.show {
+    display: flex;
+}
+
+.level-box {
+    width: 400px;
+    padding: 25px;
+    background-color: #181818;
+    border: 2px solid #555;
+    border-radius: 15px;
+    text-align: center;
+    color: white;
+}
+
+.level-box h2 {
+    margin: 0 0 25px;
+    color: #ffeb3b;
+}
+
+.level-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.level-select-button {
+    height: 50px;
+    border: 1px solid #39727a;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #164e63, #0f766e);
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.level-select-button:hover {
+    background: linear-gradient(135deg, #0891b2, #14b8a6);
+    transform: translateY(-2px);
+}
+
+.close-level-button {
+    width: 120px;
+    height: 40px;
+    margin-top: 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: #555;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-level-button:hover {
+    background-color: #777;
+}
+
 .shuffle-count {
     position: absolute;
     top: -7px;

@@ -67,6 +67,11 @@ const pauseButton = document.getElementById("pauseButton");
 const soundButton = document.getElementById("soundButton");
 const exitButton = document.getElementById("exitButton");
 
+const levelButton = document.getElementById("levelButton");
+const levelModal = document.getElementById("levelModal");
+const closeLevelButton = document.getElementById("closeLevelButton");
+const levelSelectButtons = document.querySelectorAll(".level-select-button");
+
 startGame();
 
 function playSound(audio){
@@ -83,7 +88,7 @@ function startGame() {
 
     score = 0;
     level = 1;
-    lives = 6;
+    lives = 5;
     selected = null;
     gameEnded = false;
     hintCount = 3;
@@ -107,6 +112,72 @@ function startGame() {
 
     updateTime();
     createBoard();
+    renderBoard();
+    startTimer();
+
+    showMessage("Level " + level + ": Hãy chọn 2 hình giống nhau");
+}
+
+function startLevel(selectedLevel) {
+    clearInterval(timer);
+
+    level = selectedLevel;
+    selected = null;
+    gameEnded = false;
+    paused = false;
+    moveCount = 0;
+    obstacles = [];
+
+    lives = 5 - (level - 1);
+
+    if (lives < 1) {
+        lives = 1;
+    }
+
+    hintCount = Math.max(0, 3 - (level - 1));
+
+    if (level === 2 || level === 3) {
+        shuffleCount = 2;
+    } else {
+        shuffleCount = 1;
+    }
+
+    updateLevel();
+    updateLive();
+    updateHintCount();
+    updateShuffleCount();
+    updatePauseButton();
+
+    time = 300 - (level - 1) * 10;
+
+    if (time < 60) {
+        time = 60;
+    }
+
+    maxTime = time;
+
+    updateTime();
+
+    if (level === 1) {
+        createBoard();
+    }
+
+    if (level === 2) {
+        setupLevel2();
+    }
+
+    if (level === 3) {
+        createBoard();
+    }
+
+    if (level === 4) {
+        createBoard();
+    }
+
+    if (level === 5) {
+        createBoard();
+    }
+
     renderBoard();
     startTimer();
 
@@ -1018,6 +1089,24 @@ function updateShuffleCount() {
 }
 newButton.addEventListener("click", function () {
     startGame();
+});
+
+levelButton.addEventListener("click", function () {
+    levelModal.classList.add("show");
+});
+
+closeLevelButton.addEventListener("click", function () {
+    levelModal.classList.remove("show");
+});
+
+levelSelectButtons.forEach(function (button) {
+    button.addEventListener("click", function () {
+        let selectedLevel = Number(button.dataset.level);
+
+        levelModal.classList.remove("show");
+
+        startLevel(selectedLevel);
+    });
 });
 
 hintButton.addEventListener("click", function () {
