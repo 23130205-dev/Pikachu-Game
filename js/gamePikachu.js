@@ -33,7 +33,7 @@ const images = [
 let board = [];
 let score = 0;
 let level = 1;
-let lives = 6;
+let lives = 5;
 let hintCount = 3;
 let shuffleCount = 3;
 let time = 300;
@@ -114,7 +114,7 @@ function startGame() {
 }
 
 function updateLive() {
-    const maxLivesThisLevel = 6 - (level - 1);
+    const maxLivesThisLevel = 5 - (level - 1);
     const heartIcons = document.querySelectorAll("#lives .heart-icon");
 
     heartIcons.forEach(function (icon, index) {
@@ -571,7 +571,7 @@ function winLevel() {
 
         gameEnded = false;
         paused = false;
-        lives = 6 - (level - 1);
+        lives = 5 - (level - 1);
         hintCount = Math.max(0, 3 - (level - 1));
 
         if (level === 2 || level === 3) {
