@@ -43,6 +43,8 @@ let selected = null;
 let gameEnded = false;
 let paused = false;
 let sound = true;
+let moveCount = 0;
+let obstacles = [];
 
 const boardElement = document.getElementById("board");
 const scoreElement = document.getElementById("score");
@@ -68,10 +70,10 @@ const exitButton = document.getElementById("exitButton");
 startGame();
 
 function playSound(audio){
-if(!sound || !audio){
-return;
-}
-audio.currentTime = 0;
+    if(!sound || !audio){
+        return;
+    }
+    audio.currentTime = 0;
     audio.play().catch(function () {
     });
 }
@@ -87,6 +89,8 @@ function startGame() {
     hintCount = 3;
     shuffleCount = 3;
     paused = false;
+    moveCount = 0;
+    obstacles = [];
 
     updateScore();
     updateLevel();
@@ -184,10 +188,11 @@ function gameOver() {
 }
 
 function createBoard() {
-    let values = [];
-    const total = ROWS * COLUMNS;
+    board = [];
 
-    for (let i = 0; i < total / 2; i++) {
+    let values = [];
+
+    for (let i = 0; i < ROWS * COLUMNS / 2; i++) {
         let type = i % images.length;
 
         values.push(type);
@@ -196,17 +201,116 @@ function createBoard() {
 
     shuffle(values);
 
-    board = [];
-    let index = 0;
-
     for (let row = 0; row < ROWS; row++) {
         board[row] = [];
 
         for (let col = 0; col < COLUMNS; col++) {
-            board[row][col] = values[index];
-            index++;
+            board[row][col] = values[row * COLUMNS + col];
         }
     }
+
+    while (!hasMove()) {
+        shuffleBoardData();
+    }
+}
+
+function setupLevel2() {
+    moveCount = 0;
+    obstacles = [];
+
+    createBoard();
+    createLevel2Obstacles();
+}
+
+function createLevel2Obstacles() {
+    obstacles = [
+        { row: 1, col: 3 },
+        { row: 1, col: 4 },
+        { row: 4, col: 7 },
+        { row: 4, col: 8 },
+        { row: 6, col: 10 },
+        { row: 6, col: 11 }
+    ];
+
+    let values = [];
+
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLUMNS; col++) {
+            values.push(board[row][col]);
+        }
+    }
+
+    let types = [];
+
+    for (let i = 0; i < images.length; i++) {
+        types.push(i);
+    }
+
+    shuffle(types);
+
+    let pairValues = [];
+
+    for (let i = 0; i < 3; i++) {
+        pairValues.push(types[i]);
+        pairValues.push(types[i]);
+    }
+
+    let remainingValues = [];
+
+    let removedCount = {};
+
+    for (let i = 0; i < pairValues.length; i++) {
+        let type = pairValues[i];
+
+        if (removedCount[type] === undefined) {
+            removedCount[type] = 0;
+        }
+
+        removedCount[type]++;
+    }
+
+    for (let i = 0; i < values.length; i++) {
+        let type = values[i];
+
+        if (removedCount[type] > 0) {
+            removedCount[type]--;
+        } else {
+            remainingValues.push(type);
+        }
+    }
+
+    shuffle(remainingValues);
+
+    let index = 0;
+
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLUMNS; col++) {
+            if (!isObstacle(row, col)) {
+                board[row][col] = remainingValues[index];
+                index++;
+            }
+        }
+    }
+
+    for (let i = 0; i < obstacles.length; i++) {
+        board[obstacles[i].row][obstacles[i].col] = -1;
+    }
+
+    if (!hasMove()) {
+        let count = 0;
+
+        do {
+            shuffleBoardData();
+            count++;
+        } while (!hasMove() && count < 100);
+    }
+}
+
+function isObstacle(row, col) {
+    return obstacles.some(function (obstacle) {
+        return obstacle.row === row &&
+            obstacle.col === col;
+    });
 }
 
 function shuffle(array) {
@@ -230,7 +334,14 @@ function renderBoard() {
             cell.dataset.row = row;
             cell.dataset.col = col;
 
-            if (board[row][col] !== -1) {
+            if (level === 2 && isObstacle(row, col)) {
+                cell.classList.add("obstacle");
+
+                let icon = document.createElement("i");
+                icon.className = "fa-solid fa-lock";
+
+                cell.appendChild(icon);
+            } else if (board[row][col] !== -1) {
                 let image = document.createElement("img");
 
                 image.src = images[board[row][col]];
@@ -253,6 +364,10 @@ function clickCell(event) {
     let cell = event.currentTarget;
     let row = Number(cell.dataset.row);
     let col = Number(cell.dataset.col);
+
+    if (level === 2 && isObstacle(row, col)) {
+        return;
+    }
 
     if (board[row][col] === -1) {
         return;
@@ -304,6 +419,11 @@ function removePair(first, second) {
     board[first.row][first.col] = -1;
     board[second.row][second.col] = -1;
 
+    if (level === 2) {
+        moveCount++;
+        handleLevel2Move();
+    }
+
     score += 10;
     updateScore();
 
@@ -326,6 +446,96 @@ function removePair(first, second) {
         }, 800);
     } else {
         showMessage("Đã nối thành công");
+    }
+}
+
+function handleLevel2Move() {
+    if (moveCount % 6 === 0) {
+        rotateLevel2Area();
+
+        let count = 0;
+
+        while (!hasMove() && count < 100) {
+            shuffleBoardData();
+            count++;
+        }
+
+        showMessage("Khu vực bản đồ đã xoay");
+        return;
+    }
+
+    if (moveCount % 3 === 0) {
+        moveRandomRow();
+
+        let count = 0;
+
+        while (!hasMove() && count < 100) {
+            shuffleBoardData();
+            count++;
+        }
+
+        showMessage("Một hàng đã thay đổi vị trí");
+    }
+}
+
+function rotateLevel2Area() {
+    const startRow = 2;
+    const startCol = 5;
+    const size = 4;
+
+    let positions = [];
+    let values = [];
+
+    for (let row = startRow; row < startRow + size; row++) {
+        for (let col = startCol; col < startCol + size; col++) {
+            if (!isObstacle(row, col)) {
+                positions.push({
+                    row: row,
+                    col: col
+                });
+
+                values.push(board[row][col]);
+            }
+        }
+    }
+
+    if (values.length <= 1) {
+        return;
+    }
+
+    let lastValue = values.pop();
+    values.unshift(lastValue);
+
+    for (let i = 0; i < positions.length; i++) {
+        board[positions[i].row][positions[i].col] = values[i];
+    }
+}
+
+function moveRandomRow() {
+    let row = Math.floor(Math.random() * ROWS);
+    let positions = [];
+
+    for (let col = 0; col < COLUMNS; col++) {
+        if (!isObstacle(row, col)) {
+            positions.push(col);
+        }
+    }
+
+    if (positions.length <= 1) {
+        return;
+    }
+
+    let values = [];
+
+    for (let i = 0; i < positions.length; i++) {
+        values.push(board[row][positions[i]]);
+    }
+
+    let lastValue = values.pop();
+    values.unshift(lastValue);
+
+    for (let i = 0; i < positions.length; i++) {
+        board[row][positions[i]] = values[i];
     }
 }
 
@@ -363,6 +573,7 @@ function winLevel() {
         paused = false;
         lives = 6 - (level - 1);
         hintCount = Math.max(0, 3 - (level - 1));
+
         if (level === 2 || level === 3) {
             shuffleCount = 2;
         } else {
@@ -371,6 +582,7 @@ function winLevel() {
 
         updateLive();
         updateHintCount();
+        updateShuffleCount();
         updatePauseButton();
 
         time = 300 - (level - 1) * 10;
@@ -382,7 +594,13 @@ function winLevel() {
         maxTime = time;
 
         updateTime();
-        createBoard();
+
+        if (level === 2) {
+            setupLevel2();
+        } else {
+            createBoard();
+        }
+
         renderBoard();
         startTimer();
 
@@ -441,7 +659,7 @@ function findPath(start, end) {
                 newRow <= ROWS &&
                 newCol >= -1 &&
                 newCol <= COLUMNS
-            ) {
+                ) {
                 if (newRow === end.row && newCol === end.col) {
                     return [
                         ...current.path,
@@ -498,10 +716,19 @@ function getKey(row, col, direction) {
 
 function canGo(row, col, start, end) {
     if (
-        row < 0 ||
-        row >= ROWS ||
-        col < 0 ||
-        col >= COLUMNS
+        row < -1 ||
+        row > ROWS ||
+        col < -1 ||
+        col > COLUMNS
+    ) {
+        return false;
+    }
+
+    if (
+        row === -1 ||
+        row === ROWS ||
+        col === -1 ||
+        col === COLUMNS
     ) {
         return true;
     }
@@ -511,6 +738,10 @@ function canGo(row, col, start, end) {
         (row === end.row && col === end.col)
     ) {
         return true;
+    }
+
+    if (level === 2 && isObstacle(row, col)) {
+        return false;
     }
 
     return board[row][col] === -1;
@@ -644,18 +875,15 @@ function shuffleBoard() {
     if (paused || gameEnded) {
         return;
     }
-
     clearPath();
     removeSelected();
-
     playSound(shuffleSound);
 
-    shuffleBoardData();
-
-    while (!hasMove()) {
+    let count = 0;
+    do {
         shuffleBoardData();
-    }
-
+        count++;
+    } while (!hasMove() && count < 100);
     renderBoard();
     showMessage("Đã xáo trộn bàn chơi");
 }
