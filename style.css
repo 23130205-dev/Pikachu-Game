@@ -69,6 +69,11 @@ body {
     padding: 10px 20px;
 }
 
+.moves {
+    color: #f59e0b;
+    font-weight: bold;
+}
+
 .time {
     color: #14b8a6;
     font-weight: bold;

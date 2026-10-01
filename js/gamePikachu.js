@@ -44,6 +44,7 @@ let gameEnded = false;
 let paused = false;
 let sound = true;
 let moveCount = 0;
+let maxMoves = 60;
 let obstacles = [];
 let skillCells = [];
 let skillActivated = 0;
@@ -52,6 +53,7 @@ let doubleScore = false;
 const boardElement = document.getElementById("board");
 const scoreElement = document.getElementById("score");
 const levelElement = document.getElementById("level");
+const movesElement = document.getElementById("moves");
 const messageElement = document.getElementById("message");
 const pathElement = document.getElementById("path");
 const timeElement = document.getElementById("time");
@@ -74,6 +76,7 @@ const levelButton = document.getElementById("levelButton");
 const levelModal = document.getElementById("levelModal");
 const closeLevelButton = document.getElementById("closeLevelButton");
 const levelSelectButtons = document.querySelectorAll(".level-select-button");
+
 
 startGame();
 
@@ -301,6 +304,7 @@ function setupLevel2() {
 
 function setupLevel3() {
     moveCount = 0;
+    maxMoves = 60;
     obstacles = [];
     skillCells = [];
     skillActivated = 0;
@@ -432,7 +436,7 @@ function createLevel3Elements() {
 
     let pairValues = [];
 
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 6; i++) {
         pairValues.push(types[i]);
         pairValues.push(types[i]);
     }
@@ -534,6 +538,13 @@ function isObstacle(row, col) {
         return obstacle.row === row &&
             obstacle.col === col;
     });
+}
+
+function isLevel3BlockedCell(row, col) {
+    if (isObstacle(row, col)) {
+        return true;
+    }
+    return getSkill(row, col) !== undefined;
 }
 
 function shuffle(array) {
@@ -825,12 +836,28 @@ function removePair(first, second) {
 
     clearPath();
     selected = null;
-    renderBoard();
 
     if (checkWin()) {
+        renderBoard();
         winLevel();
         return;
     }
+
+    if (level === 3 && moveCount >= maxMoves) {
+        renderBoard();
+        gameEnded = true;
+        clearInterval(timer);
+        showMessage(
+            "Bạn đã hết " + maxMoves + " lượt! GAME OVER"
+        );
+        return;
+    }
+
+    if (level === 3) {
+        handleLevel3Move();
+    }
+
+    renderBoard();
 
     if (!hasMove()) {
         showMessage("Không còn nước đi");
@@ -855,22 +882,50 @@ function handleLevel2Move() {
             shuffleBoardData();
             count++;
         }
-
-        showMessage("Khu vực bản đồ đã xoay");
+        showMessage("Khu vực bản đồ đã được xoay");
         return;
     }
 
     if (moveCount % 3 === 0) {
         moveRandomRow();
-
         let count = 0;
-
         while (!hasMove() && count < 100) {
             shuffleBoardData();
             count++;
         }
 
-        showMessage("Một hàng đã thay đổi vị trí");
+        showMessage("Một hàng đã được thay đổi vị trí");
+    }
+}
+
+function handleLevel3Move() {
+    if (moveCount % 6 === 0) {
+        rotateLevel3Area();
+        ensureLevel3Move();
+        showMessage("Khu vực bản đồ đã được thay đổi");
+        return;
+    }
+
+    if (moveCount % 4 === 0) {
+        moveRandomColumn();
+        ensureLevel3Move();
+        showMessage("Một cột đã được thay đổi vị trí");
+        return;
+    }
+
+    if (moveCount % 2 === 0) {
+        moveRandomRow();
+        ensureLevel3Move();
+        showMessage("Một hàng đã được thay đổi vị trí");
+    }
+}
+
+function ensureLevel3Move() {
+    let count = 0;
+
+    while (!hasMove() && count < 100) {
+        shuffleBoardData();
+        count++;
     }
 }
 
@@ -907,12 +962,46 @@ function rotateLevel2Area() {
     }
 }
 
+function rotateLevel3Area() {
+    const startRow = 2;
+    const startCol = 5;
+    const size = 4;
+
+    let positions = [];
+    let values = [];
+
+    for (let row = startRow; row < startRow + size; row++) {
+        for (let col = startCol; col < startCol + size; col++) {
+            if (!isLevel3BlockedCell(row, col)) {
+                positions.push({
+                    row: row,
+                    col: col
+                });
+
+                values.push(board[row][col]);
+            }
+        }
+    }
+
+    if (values.length <= 1) {
+        return;
+    }
+
+    let lastValue = values.pop();
+    values.unshift(lastValue);
+
+    for (let i = 0; i < positions.length; i++) {
+        board[positions[i].row][positions[i].col] =
+            values[i];
+    }
+}
+
 function moveRandomRow() {
     let row = Math.floor(Math.random() * ROWS);
     let positions = [];
 
     for (let col = 0; col < COLUMNS; col++) {
-        if (!isObstacle(row, col)) {
+        if (!isLevel3BlockedCell(row, col)) {
             positions.push(col);
         }
     }
@@ -935,6 +1024,34 @@ function moveRandomRow() {
     }
 }
 
+function moveRandomColumn() {
+    let col = Math.floor(Math.random() * COLUMNS);
+    let positions = [];
+
+    for (let row = 0; row < ROWS; row++) {
+        if (!isLevel3BlockedCell(row, col)) {
+            positions.push(row);
+        }
+    }
+
+    if (positions.length <= 1) {
+        return;
+    }
+
+    let values = [];
+
+    for (let i = 0; i < positions.length; i++) {
+        values.push(board[positions[i]][col]);
+    }
+
+    let lastValue = values.pop();
+    values.unshift(lastValue);
+
+    for (let i = 0; i < positions.length; i++) {
+        board[positions[i]][col] = values[i];
+    }
+}
+
 function checkWin() {
     for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLUMNS; col++) {
@@ -943,15 +1060,6 @@ function checkWin() {
             }
         }
     }
-
-    if (level === 3 && skillActivated < 3) {
-        showMessage(
-            "Bạn cần phải kích hoạt ít nhất 3 kỹ năng"
-        );
-
-        return false;
-    }
-
     return true;
 }
 
@@ -1214,6 +1322,19 @@ function removeSelected() {
 
 function updateScore() {
     scoreElement.textContent = score;
+}
+
+function updateMoves() {
+    if (!movesElement) {
+        return;
+    }
+
+    if (level === 3) {
+        movesElement.textContent =
+            maxMoves - moveCount;
+    } else {
+        movesElement.textContent = "-";
+    }
 }
 
 function showMessage(text) {
