@@ -45,6 +45,9 @@ let paused = false;
 let sound = true;
 let moveCount = 0;
 let obstacles = [];
+let skillCells = [];
+let skillActivated = 0;
+let doubleScore = false;
 
 const boardElement = document.getElementById("board");
 const scoreElement = document.getElementById("score");
@@ -96,6 +99,9 @@ function startGame() {
     paused = false;
     moveCount = 0;
     obstacles = [];
+    skillCells = [];
+    skillActivated = 0;
+    doubleScore = false;
 
     updateScore();
     updateLevel();
@@ -167,7 +173,7 @@ function startLevel(selectedLevel) {
     }
 
     if (level === 3) {
-        createBoard();
+        setupLevel3();
     }
 
     if (level === 4) {
@@ -293,6 +299,17 @@ function setupLevel2() {
     createLevel2Obstacles();
 }
 
+function setupLevel3() {
+    moveCount = 0;
+    obstacles = [];
+    skillCells = [];
+    skillActivated = 0;
+    doubleScore = false;
+
+    createBoard();
+    createLevel3Elements();
+}
+
 function createLevel2Obstacles() {
     obstacles = [
         { row: 1, col: 3 },
@@ -377,6 +394,141 @@ function createLevel2Obstacles() {
     }
 }
 
+function createLevel3Elements() {
+    obstacles = [
+        { row: 1, col: 2 },
+        { row: 1, col: 3 },
+        { row: 1, col: 10 },
+        { row: 1, col: 11 },
+
+        { row: 6, col: 2 },
+        { row: 6, col: 3 },
+        { row: 6, col: 10 },
+        { row: 6, col: 11 }
+    ];
+    
+    skillCells = [
+        { row: 2, col: 2, type: "teleport" },
+        { row: 2, col: 11, type: "destroy" },
+        { row: 5, col: 2, type: "double" },
+        { row: 5, col: 11, type: "freeze" }
+    ];
+
+    let values = [];
+
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLUMNS; col++) {
+            values.push(board[row][col]);
+        }
+    }
+
+    let types = [];
+
+    for (let i = 0; i < images.length; i++) {
+        types.push(i);
+    }
+
+    shuffle(types);
+
+    let pairValues = [];
+
+    for (let i = 0; i < 4; i++) {
+        pairValues.push(types[i]);
+        pairValues.push(types[i]);
+    }
+
+    let removedCount = {};
+
+    for (let i = 0; i < pairValues.length; i++) {
+        let type = pairValues[i];
+
+        if (removedCount[type] === undefined) {
+            removedCount[type] = 0;
+        }
+
+        removedCount[type]++;
+    }
+
+    let remainingValues = [];
+
+    for (let i = 0; i < values.length; i++) {
+        let type = values[i];
+
+        if (removedCount[type] > 0) {
+            removedCount[type]--;
+        } else {
+            remainingValues.push(type);
+        }
+    }
+
+    shuffle(remainingValues);
+
+    let index = 0;
+
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLUMNS; col++) {
+            if (!isLevel3SpecialCell(row, col)) {
+                board[row][col] = remainingValues[index];
+                index++;
+            }
+        }
+    }
+
+    for (let i = 0; i < obstacles.length; i++) {
+        board[obstacles[i].row][obstacles[i].col] = -1;
+    }
+
+    for (let i = 0; i < skillCells.length; i++) {
+        let skill = skillCells[i];
+
+        if (skill.type === "teleport") {
+            board[skill.row][skill.col] = -2;
+        }
+
+        if (skill.type === "destroy") {
+            board[skill.row][skill.col] = -3;
+        }
+
+        if (skill.type === "double") {
+            board[skill.row][skill.col] = -4;
+        }
+
+        if (skill.type === "freeze") {
+            board[skill.row][skill.col] = -5;
+        }
+    }
+
+    if (!hasMove()) {
+        let count = 0;
+
+        do {
+            shuffleBoardData();
+            count++;
+        } while (!hasMove() && count < 100);
+    }
+}
+
+function isLevel3SpecialCell(row, col) {
+    if (obstacles.some(function (obstacle) {
+        return obstacle.row === row &&
+            obstacle.col === col;
+    })) {
+        return true;
+    }
+
+    return skillCells.some(function (skill) {
+        return skill.row === row &&
+            skill.col === col;
+    });
+}
+
+function getSkill(row, col) {
+    return skillCells.find(function (skill) {
+        return skill.row === row &&
+            skill.col === col;
+    });
+}
+
 function isObstacle(row, col) {
     return obstacles.some(function (obstacle) {
         return obstacle.row === row &&
@@ -405,11 +557,38 @@ function renderBoard() {
             cell.dataset.row = row;
             cell.dataset.col = col;
 
-            if (level === 2 && isObstacle(row, col)) {
+            if (
+                (level === 2 || level === 3) &&
+                isObstacle(row, col)
+            ) {
                 cell.classList.add("obstacle");
 
                 let icon = document.createElement("i");
                 icon.className = "fa-solid fa-lock";
+
+                cell.appendChild(icon);
+            } else if (level === 3 && getSkill(row, col)) {
+                let skill = getSkill(row, col);
+
+                cell.classList.add("skill-cell");
+
+                let icon = document.createElement("i");
+
+                if (skill.type === "teleport") {
+                    icon.className = "fa-solid fa-arrows-up-down-left-right";
+                }
+
+                if (skill.type === "destroy") {
+                    icon.className = "fa-solid fa-hammer";
+                }
+
+                if (skill.type === "double") {
+                    icon.className = "fa-solid fa-star";
+                }
+
+                if (skill.type === "freeze") {
+                    icon.className = "fa-solid fa-snowflake";
+                }
 
                 cell.appendChild(icon);
             } else if (board[row][col] !== -1) {
@@ -436,7 +615,15 @@ function clickCell(event) {
     let row = Number(cell.dataset.row);
     let col = Number(cell.dataset.col);
 
-    if (level === 2 && isObstacle(row, col)) {
+    if (
+        (level === 2 || level === 3) &&
+        isObstacle(row, col)
+    ) {
+        return;
+    }
+
+    if (level === 3 && getSkill(row, col)) {
+        activateSkill(row, col);
         return;
     }
 
@@ -463,6 +650,134 @@ function clickCell(event) {
         row: row,
         col: col
     });
+}
+
+function activateSkill(row, col) {
+    if (paused || gameEnded) {
+        return;
+    }
+
+    let skill = getSkill(row, col);
+
+    if (!skill) {
+        return;
+    }
+
+    skillActivated++;
+
+    if (skill.type === "teleport") {
+        useTeleportSkill();
+    }
+
+    if (skill.type === "destroy") {
+        useDestroySkill();
+    }
+
+    if (skill.type === "double") {
+        useDoubleSkill();
+    }
+
+    if (skill.type === "freeze") {
+        useFreezeSkill();
+    }
+
+    board[row][col] = -1;
+
+    if (skillActivated >= 3) {
+        showMessage(
+            "Đã kích hoạt " + skillActivated + "/4 kỹ năng"
+        );
+    }
+
+    renderBoard();
+
+    if (skillActivated >= 3) {
+        showMessage(
+            "Đã kích hoạt đủ 3 kỹ năng! Tiếp tục ghép hình."
+        );
+    }
+}
+
+function useTeleportSkill() {
+    let emptyCells = [];
+    let imageCells = [];
+
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLUMNS; col++) {
+            if (board[row][col] === -1) {
+                emptyCells.push({
+                    row: row,
+                    col: col
+                });
+            } else if (
+                board[row][col] >= 0 &&
+                !isObstacle(row, col) &&
+                !getSkill(row, col)
+            ) {
+                imageCells.push({
+                    row: row,
+                    col: col
+                });
+            }
+        }
+    }
+
+    if (emptyCells.length === 0 || imageCells.length === 0) {
+        showMessage("Không thể sử dụng Teleport");
+        return;
+    }
+
+    let imageIndex =
+        Math.floor(Math.random() * imageCells.length);
+
+    let emptyIndex =
+        Math.floor(Math.random() * emptyCells.length);
+
+    let imageCell = imageCells[imageIndex];
+    let emptyCell = emptyCells[emptyIndex];
+
+    board[emptyCell.row][emptyCell.col] =
+        board[imageCell.row][imageCell.col];
+
+    board[imageCell.row][imageCell.col] = -1;
+
+    showMessage("Đã dịch chuyển một hình");
+}
+
+function useDestroySkill() {
+    if (obstacles.length === 0) {
+        showMessage("Không còn chướng ngại vật");
+        return;
+    }
+
+    let index =
+        Math.floor(Math.random() * obstacles.length);
+
+    let obstacle = obstacles[index];
+
+    board[obstacle.row][obstacle.col] = -1;
+
+    obstacles.splice(index, 1);
+
+    showMessage("Phá chướng ngại vật thành công");
+}
+
+function useDoubleSkill() {
+    doubleScore = true;
+    showMessage("Lượt ghép tiếp theo được nhân đôi điểm");
+}
+
+function useFreezeSkill() {
+    paused = true;
+
+    showMessage("Đóng băng thời gian trong 5 giây");
+
+    setTimeout(function () {
+        if (!gameEnded) {
+            paused = false;
+            showMessage("Thời gian tiếp tục chạy");
+        }
+    }, 5000);
 }
 
 function checkPair(first, second) {
@@ -495,7 +810,17 @@ function removePair(first, second) {
         handleLevel2Move();
     }
 
-    score += 10;
+    if (level === 3) {
+        moveCount++;
+    }
+
+    if (doubleScore) {
+        score += 20;
+        doubleScore = false;
+    } else {
+        score += 10;
+    }
+
     updateScore();
 
     clearPath();
@@ -613,11 +938,20 @@ function moveRandomRow() {
 function checkWin() {
     for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLUMNS; col++) {
-            if (board[row][col] !== -1) {
+            if (board[row][col] >= 0) {
                 return false;
             }
         }
     }
+
+    if (level === 3 && skillActivated < 3) {
+        showMessage(
+            "Bạn cần phải kích hoạt ít nhất 3 kỹ năng"
+        );
+
+        return false;
+    }
+
     return true;
 }
 
@@ -668,6 +1002,8 @@ function winLevel() {
 
         if (level === 2) {
             setupLevel2();
+        } else if (level === 3) {
+            setupLevel3();
         } else {
             createBoard();
         }
@@ -811,7 +1147,10 @@ function canGo(row, col, start, end) {
         return true;
     }
 
-    if (level === 2 && isObstacle(row, col)) {
+    if (
+        (level === 2 || level === 3) &&
+        isObstacle(row, col)
+    ) {
         return false;
     }
 
@@ -925,16 +1264,19 @@ function shuffleBoardData() {
 
     for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLUMNS; col++) {
-            if (board[row][col] !== -1) {
+            if (board[row][col] >= 0) {
                 values.push(board[row][col]);
             }
         }
     }
+
     shuffle(values);
+
     let index = 0;
+
     for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLUMNS; col++) {
-            if (board[row][col] !== -1) {
+            if (board[row][col] >= 0) {
                 board[row][col] = values[index];
                 index++;
             }

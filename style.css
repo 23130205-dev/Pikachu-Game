@@ -304,6 +304,22 @@ body {
     font-size: 26px;
 }
 
+.cell.skill-cell {
+    background-color: #f3e89e;
+    border: 2px solid #f59e0b;
+    cursor: pointer;
+}
+
+.cell.skill-cell i {
+    font-size: 28px;
+    color: #ba690a;
+}
+
+.cell.skill-cell:hover {
+    background-color: #f3e89e;
+    transform: scale(1.05);
+}
+
 .cell.selected {
     background-color: #8cff8c;
     border: 3px solid #20a020;
