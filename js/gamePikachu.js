@@ -315,14 +315,33 @@ function setupLevel3() {
 }
 
 function createLevel2Obstacles() {
-    obstacles = [
-        { row: 1, col: 3 },
-        { row: 1, col: 4 },
-        { row: 4, col: 7 },
-        { row: 4, col: 8 },
-        { row: 6, col: 10 },
-        { row: 6, col: 11 }
-    ];
+    obstacles = [];
+
+    while (obstacles.length < 6) {
+        let row = Math.floor(Math.random() * ROWS);
+        let col = Math.floor(Math.random() * COLUMNS);
+
+        let valid = true;
+
+        for (let i = 0; i < obstacles.length; i++) {
+            let obstacle = obstacles[i];
+
+            let rowDistance = Math.abs(obstacle.row - row);
+            let colDistance = Math.abs(obstacle.col - col);
+
+            if (rowDistance + colDistance < 3) {
+                valid = false;
+                break;
+            }
+        }
+
+        if (valid) {
+            obstacles.push({
+                row: row,
+                col: col
+            });
+        }
+    }
 
     let values = [];
 
@@ -399,117 +418,104 @@ function createLevel2Obstacles() {
 }
 
 function createLevel3Elements() {
-    obstacles = [
-        { row: 1, col: 2 },
-        { row: 1, col: 3 },
-        { row: 1, col: 10 },
-        { row: 1, col: 11 },
+    obstacles = [];
+    skillCells = [];
 
-        { row: 6, col: 2 },
-        { row: 6, col: 3 },
-        { row: 6, col: 10 },
-        { row: 6, col: 11 }
-    ];
-    
-    skillCells = [
-        { row: 2, col: 2, type: "teleport" },
-        { row: 2, col: 11, type: "destroy" },
-        { row: 5, col: 2, type: "double" },
-        { row: 5, col: 11, type: "freeze" }
-    ];
+    let specialPositions = [];
 
-    let values = [];
+    while (specialPositions.length < 12) {
+        let row = Math.floor(Math.random() * ROWS);
+        let col = Math.floor(Math.random() * COLUMNS);
 
-    for (let row = 0; row < ROWS; row++) {
-        for (let col = 0; col < COLUMNS; col++) {
-            values.push(board[row][col]);
+        let valid = true;
+
+        for (let i = 0; i < specialPositions.length; i++) {
+            let position = specialPositions[i];
+
+            let rowDistance = Math.abs(position.row - row);
+            let colDistance = Math.abs(position.col - col);
+
+            if (rowDistance + colDistance < 3) {
+                valid = false;
+                break;
+            }
+        }
+
+        if (valid) {
+            specialPositions.push({
+                row: row,
+                col: col
+            });
         }
     }
 
-    let types = [];
-
-    for (let i = 0; i < images.length; i++) {
-        types.push(i);
+    for (let i = 0; i < 8; i++) {
+        obstacles.push({
+            row: specialPositions[i].row,
+            col: specialPositions[i].col
+        });
     }
 
-    shuffle(types);
+    let skillTypes = [
+        "teleport",
+        "destroy",
+        "double",
+        "freeze"
+    ];
+
+    for (let i = 0; i < 4; i++) {
+        skillCells.push({
+            row: specialPositions[i + 8].row,
+            col: specialPositions[i + 8].col,
+            type: skillTypes[i]
+        });
+    }
 
     let pairValues = [];
 
-    for (let i = 0; i < 6; i++) {
-        pairValues.push(types[i]);
-        pairValues.push(types[i]);
+    for (let i = 0; i < 50; i++) {
+        let type = i % images.length;
+
+        pairValues.push(type);
+        pairValues.push(type);
     }
 
-    let removedCount = {};
-
-    for (let i = 0; i < pairValues.length; i++) {
-        let type = pairValues[i];
-
-        if (removedCount[type] === undefined) {
-            removedCount[type] = 0;
-        }
-
-        removedCount[type]++;
-    }
-
-    let remainingValues = [];
-
-    for (let i = 0; i < values.length; i++) {
-        let type = values[i];
-
-        if (removedCount[type] > 0) {
-            removedCount[type]--;
-        } else {
-            remainingValues.push(type);
-        }
-    }
-
-    shuffle(remainingValues);
+    pairValues.sort(function () {
+        return Math.random() - 0.5;
+    });
 
     let index = 0;
 
     for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLUMNS; col++) {
-            if (!isLevel3SpecialCell(row, col)) {
-                board[row][col] = remainingValues[index];
-                index++;
+
+            if (isObstacle(row, col)) {
+                board[row][col] = -1;
+                continue;
             }
+
+            let skill = getSkill(row, col);
+
+            if (skill !== undefined) {
+                if (skill.type === "teleport") {
+                    board[row][col] = -2;
+                } else if (skill.type === "destroy") {
+                    board[row][col] = -3;
+                } else if (skill.type === "double") {
+                    board[row][col] = -4;
+                } else if (skill.type === "freeze") {
+                    board[row][col] = -5;
+                }
+
+                continue;
+            }
+
+            board[row][col] = pairValues[index];
+            index++;
         }
     }
 
-    for (let i = 0; i < obstacles.length; i++) {
-        board[obstacles[i].row][obstacles[i].col] = -1;
-    }
-
-    for (let i = 0; i < skillCells.length; i++) {
-        let skill = skillCells[i];
-
-        if (skill.type === "teleport") {
-            board[skill.row][skill.col] = -2;
-        }
-
-        if (skill.type === "destroy") {
-            board[skill.row][skill.col] = -3;
-        }
-
-        if (skill.type === "double") {
-            board[skill.row][skill.col] = -4;
-        }
-
-        if (skill.type === "freeze") {
-            board[skill.row][skill.col] = -5;
-        }
-    }
-
-    if (!hasMove()) {
-        let count = 0;
-
-        do {
-            shuffleBoardData();
-            count++;
-        } while (!hasMove() && count < 100);
-    }
+    ensureLevel3Move();
 }
 
 function isLevel3SpecialCell(row, col) {
