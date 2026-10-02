@@ -343,6 +343,17 @@ body {
     border: 3px solid red;
 }
 
+.night-hidden {
+    background: #111827 !important;
+    opacity: 0.9;
+}
+
+.night-hidden::after {
+    content: "🌙";
+    font-size: 18px;
+    opacity: 0.5;
+}
+
 .path {
     position: absolute;
     left: -3px;

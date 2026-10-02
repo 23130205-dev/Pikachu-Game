@@ -35,6 +35,11 @@ let obstacles = [];
 let skillCells = [];
 let skillActivated = 0;
 let doubleScore = false;
+let nightCenterRow = 3;
+let nightCenterCol = 6;
+let nightRadius = 3;
+let nightMoveCount = 0;
+let nightTimeCount = 0;
 
 const boardElement = document.getElementById("board");
 const scoreElement = document.getElementById("score");
@@ -92,6 +97,10 @@ function startGame() {
     skillCells = [];
     skillActivated = 0;
     doubleScore = false;
+    nightCenterRow = 3;
+    nightCenterCol = 6;
+    nightMoveCount = 0;
+    nightTimeCount = 0;
 
     updateScore();
     updateLevel();
@@ -128,6 +137,10 @@ function startLevel(selectedLevel) {
     skillCells = [];
     skillActivated = 0;
     doubleScore = false;
+    nightCenterRow = 3;
+    nightCenterCol = 6;
+    nightMoveCount = 0;
+    nightTimeCount = 0;
 
     lives = 5 - (level - 1);
 
@@ -174,6 +187,7 @@ function startLevel(selectedLevel) {
 
     if (level === 4) {
         createBoard();
+        ensureLevel4Move();
     }
 
     if (level === 5) {
@@ -234,6 +248,27 @@ function startTimer() {
         time--;
         updateTime();
 
+        if (level === 4) {
+            nightTimeCount++;
+
+            if (nightTimeCount >= 8) {
+                nightTimeCount = 0;
+
+                nightCenterRow =
+                    Math.floor(Math.random() * (ROWS - 2)) + 1;
+
+                nightCenterCol =
+                    Math.floor(Math.random() * (COLUMNS - 2)) + 1;
+
+                ensureLevel4Move();
+
+                renderBoard();
+
+                showMessage(
+                    "Bóng tối đã thay đổi vị trí nhìn"
+                );
+            }
+}
         if (time <= 0) {
             gameOver();
         }
@@ -762,6 +797,24 @@ function renderBoard() {
             cell.dataset.row = row;
             cell.dataset.col = col;
 
+            let nightVisible = true;
+
+            if (level === 4) {
+                let rowDistance =
+                    Math.abs(row - nightCenterRow);
+
+                let colDistance =
+                    Math.abs(col - nightCenterCol);
+
+                if (
+                    rowDistance > nightRadius ||
+                    colDistance > nightRadius
+                ) {
+                    nightVisible = false;
+                    cell.classList.add("night-hidden");
+                }
+            }
+
             if (
                 (level === 2 || level === 3) &&
                 isObstacle(row, col)
@@ -805,8 +858,10 @@ function renderBoard() {
 
                 cell.appendChild(icon);
 
-            } else if (board[row][col] !== -1) {
-
+            } else if (
+                board[row][col] !== -1 &&
+                nightVisible
+            ) {
                 let image = document.createElement("img");
 
                 image.src = images[board[row][col]];
@@ -831,6 +886,25 @@ function clickCell(event) {
 
     let row = Number(cell.dataset.row);
     let col = Number(cell.dataset.col);
+
+    if (level === 4) {
+        let rowDistance =
+            Math.abs(row - nightCenterRow);
+
+        let colDistance =
+            Math.abs(col - nightCenterCol);
+
+        if (
+            rowDistance > nightRadius ||
+            colDistance > nightRadius
+        ) {
+            showMessage(
+                "Ô này đang nằm trong bóng tối"
+            );
+
+            return;
+        }
+    }
 
     if (
         (level === 2 || level === 3) &&
@@ -1081,6 +1155,26 @@ function removePair(first, second) {
         updateMoves();
     }
 
+    if (level === 4) {
+        nightMoveCount++;
+
+        if (nightMoveCount >= 2) {
+            nightMoveCount = 0;
+
+            nightCenterRow =
+                Math.floor(Math.random() * (ROWS - 2)) + 1;
+
+            nightCenterCol =
+                Math.floor(Math.random() * (COLUMNS - 2)) + 1;
+
+            ensureLevel4Move();
+
+            showMessage(
+                "Vùng nhìn trong bóng tối đã thay đổi"
+            );
+        }
+    }
+
     if (doubleScore) {
         score += 20;
         doubleScore = false;
@@ -1125,19 +1219,15 @@ function removePair(first, second) {
     renderBoard();
 
     if (!hasMove()) {
-
         showMessage("Không còn nước đi");
 
         setTimeout(function () {
-
             if (!gameEnded) {
                 shuffleBoard();
             }
-
         }, 800);
 
     } else {
-
         showMessage("Đã nối thành công");
     }
 }
@@ -1276,6 +1366,100 @@ function rotateLevel2Area() {
             positions[i].col
         ] = values[i];
     }
+}
+
+function ensureLevel4Move() {
+    let count = 0;
+
+    while (count < 100) {
+
+        let found = false;
+
+        for (let row1 = 0; row1 < ROWS; row1++) {
+
+            for (let col1 = 0; col1 < COLUMNS; col1++) {
+
+                if (board[row1][col1] < 0) {
+                    continue;
+                }
+
+                let visible1 =
+                    Math.abs(row1 - nightCenterRow) <= nightRadius &&
+                    Math.abs(col1 - nightCenterCol) <= nightRadius;
+
+                if (!visible1) {
+                    continue;
+                }
+
+                for (let row2 = 0; row2 < ROWS; row2++) {
+
+                    for (let col2 = 0; col2 < COLUMNS; col2++) {
+
+                        if (
+                            row1 === row2 &&
+                            col1 === col2
+                        ) {
+                            continue;
+                        }
+
+                        if (board[row1][col1] !== board[row2][col2]) {
+                            continue;
+                        }
+
+                        let visible2 =
+                            Math.abs(row2 - nightCenterRow) <= nightRadius &&
+                            Math.abs(col2 - nightCenterCol) <= nightRadius;
+
+                        if (!visible2) {
+                            continue;
+                        }
+
+                        let path = findPath(
+                            {
+                                row: row1,
+                                col: col1
+                            },
+                            {
+                                row: row2,
+                                col: col2
+                            }
+                        );
+
+                        if (path !== null) {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (found) {
+                        break;
+                    }
+                }
+
+                if (found) {
+                    break;
+                }
+            }
+
+            if (found) {
+                break;
+            }
+        }
+
+        if (found) {
+            return true;
+        }
+
+        nightCenterRow =
+            Math.floor(Math.random() * (ROWS - 2)) + 1;
+
+        nightCenterCol =
+            Math.floor(Math.random() * (COLUMNS - 2)) + 1;
+
+        count++;
+    }
+
+    return false;
 }
 
 function rotateLevel3Area() {
@@ -1482,14 +1666,24 @@ function winLevel() {
         maxTime = time;
 
         moveCount = 0;
+        nightCenterRow = 3;
+        nightCenterCol = 6;
+        nightMoveCount = 0;
+        nightTimeCount = 0;
 
         updateMoves();
         updateTime();
 
         if (level === 2) {
             setupLevel2();
+
         } else if (level === 3) {
             setupLevel3();
+
+        } else if (level === 4) {
+            createBoard();
+            ensureLevel4Move();
+
         } else {
             createBoard();
         }
@@ -1508,138 +1702,96 @@ function winLevel() {
 
 function findPath(start, end) {
     const directions = [
-        [-1, 0],
-        [0, 1],
-        [1, 0],
-        [0, -1]
+        { row: -1, col: 0 },
+        { row: 1, col: 0 },
+        { row: 0, col: -1 },
+        { row: 0, col: 1 }
     ];
 
-    let queue = [];
-    let visited = {};
+    const queue = [{
+        row: start.row,
+        col: start.col,
+        dir: -1,
+        turns: 0,
+        path: [
+            {
+                row: start.row,
+                col: start.col
+            }
+        ]
+    }];
 
-    for (let direction = 0; direction < 4; direction++) {
+    const visited = new Map();
 
-        queue.push({
-            row: start.row,
-            col: start.col,
-            direction: direction,
-            turns: 0,
-            path: [
-                {
-                    row: start.row,
-                    col: start.col
-                }
-            ]
-        });
-
-        let key =
-            getKey(
-                start.row,
-                start.col,
-                direction
-            );
-
-        visited[key] = 0;
+    function key(row, col, dir) {
+        return row + "," + col + "," + dir;
     }
 
     while (queue.length > 0) {
+        const current = queue.shift();
 
-        let current = queue.shift();
+        for (let dir = 0; dir < 4; dir++) {
 
-        for (
-            let newDirection = 0;
-            newDirection < 4;
-            newDirection++
-        ) {
-
-            let turns = current.turns;
+            let newTurns = current.turns;
 
             if (
-                newDirection !==
-                current.direction
+                current.dir !== -1 &&
+                current.dir !== dir
             ) {
-                turns++;
+                newTurns++;
             }
 
-            if (turns > 2) {
+            if (newTurns > 2) {
                 continue;
             }
 
             let newRow =
-                current.row +
-                directions[newDirection][0];
+                current.row + directions[dir].row;
 
             let newCol =
-                current.col +
-                directions[newDirection][1];
+                current.col + directions[dir].col;
 
-            while (
-                newRow >= -1 &&
-                newRow <= ROWS &&
-                newCol >= -1 &&
-                newCol <= COLUMNS
+            if (
+                newRow === end.row &&
+                newCol === end.col
             ) {
-
-                if (
-                    newRow === end.row &&
-                    newCol === end.col
-                ) {
-                    return [
-                        ...current.path,
-                        {
-                            row: newRow,
-                            col: newCol
-                        }
-                    ];
-                }
-
-                if (
-                    !canGo(
-                        newRow,
-                        newCol,
-                        start,
-                        end
-                    )
-                ) {
-                    break;
-                }
-
-                let key =
-                    getKey(
-                        newRow,
-                        newCol,
-                        newDirection
-                    );
-
-                if (
-                    visited[key] === undefined ||
-                    turns < visited[key]
-                ) {
-
-                    visited[key] = turns;
-
-                    queue.push({
+                return [
+                    ...current.path,
+                    {
                         row: newRow,
-                        col: newCol,
-                        direction:
-                            newDirection,
-                        turns: turns,
-                        path: [
-                            ...current.path,
-                            {
-                                row: newRow,
-                                col: newCol
-                            }
-                        ]
-                    });
-                }
-
-                newRow +=
-                    directions[newDirection][0];
-
-                newCol +=
-                    directions[newDirection][1];
+                        col: newCol
+                    }
+                ];
             }
+
+            if (!canGo(newRow, newCol, start, end)) {
+                continue;
+            }
+
+            let stateKey = key(newRow, newCol, dir);
+
+            if (
+                visited.has(stateKey) &&
+                visited.get(stateKey) <= newTurns
+            ) {
+                continue;
+            }
+
+            visited.set(stateKey, newTurns);
+
+            queue.push({
+                row: newRow,
+                col: newCol,
+                dir: dir,
+                turns: newTurns,
+                path: [
+                    ...current.path,
+                    {
+                        row: newRow,
+                        col: newCol
+                    }
+                ]
+            });
         }
     }
 
@@ -1792,17 +1944,19 @@ function hasMove() {
                 continue;
             }
 
-            for (
-                let row2 = 0;
-                row2 < ROWS;
-                row2++
+            if (
+                level === 4 &&
+                (
+                    Math.abs(row1 - nightCenterRow) > nightRadius ||
+                    Math.abs(col1 - nightCenterCol) > nightRadius
+                )
             ) {
+                continue;
+            }
 
-                for (
-                    let col2 = 0;
-                    col2 < COLUMNS;
-                    col2++
-                ) {
+            for (let row2 = 0; row2 < ROWS; row2++) {
+
+                for (let col2 = 0; col2 < COLUMNS; col2++) {
 
                     if (
                         row1 === row2 &&
@@ -1811,24 +1965,30 @@ function hasMove() {
                         continue;
                     }
 
+                    if (board[row1][col1] !== board[row2][col2]) {
+                        continue;
+                    }
+
                     if (
-                        board[row1][col1] !==
-                        board[row2][col2]
+                        level === 4 &&
+                        (
+                            Math.abs(row2 - nightCenterRow) > nightRadius ||
+                            Math.abs(col2 - nightCenterCol) > nightRadius
+                        )
                     ) {
                         continue;
                     }
 
-                    let path =
-                        findPath(
-                            {
-                                row: row1,
-                                col: col1
-                            },
-                            {
-                                row: row2,
-                                col: col2
-                            }
-                        );
+                    let path = findPath(
+                        {
+                            row: row1,
+                            col: col1
+                        },
+                        {
+                            row: row2,
+                            col: col2
+                        }
+                    );
 
                     if (path !== null) {
                         return true;
@@ -1955,6 +2115,15 @@ function showHint() {
             if (board[row1][col1] < 0) {
                 continue;
             }
+            if (
+                level === 4 &&
+                (
+                    Math.abs(row1 - nightCenterRow) > nightRadius ||
+                    Math.abs(col1 - nightCenterCol) > nightRadius
+                )
+            ) {
+                continue;
+            }
 
             for (
                 let row2 = 0;
@@ -1978,6 +2147,16 @@ function showHint() {
                     if (
                         board[row1][col1] !==
                         board[row2][col2]
+                    ) {
+                        continue;
+                    }
+
+                    if (
+                        level === 4 &&
+                        (
+                            Math.abs(row2 - nightCenterRow) > nightRadius ||
+                            Math.abs(col2 - nightCenterCol) > nightRadius
+                        )
                     ) {
                         continue;
                     }
