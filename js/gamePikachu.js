@@ -250,6 +250,9 @@ function startTimer() {
             if (nightTimeCount >= 8) {
                 nightTimeCount = 0;
 
+                removeSelected();
+                clearPath();
+
                 nightCenterRow =
                     Math.floor(Math.random() * (ROWS - 2)) + 1;
 
