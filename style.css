@@ -338,6 +338,18 @@ body {
     border: 3px solid red;
 }
 
+.cell.memory-hidden {
+    background-color: #555;
+    border-color: #333;
+}
+
+.cell.memory-hidden::after {
+    content: "?";
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+}
+
 .night-hidden {
     background: #111827 !important;
     opacity: 0.9;

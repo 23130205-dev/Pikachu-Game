@@ -40,6 +40,10 @@ let nightCenterRow = 3;
 let nightCenterCol = 6;
 let nightRadius = 3;
 let nightTimeCount = 0;
+let memoryVisible = true;
+let hiddenCells = [];
+let memorySelected = [];
+let memoryHideTimer = null;
 
 const boardElement = document.getElementById("board");
 const scoreElement = document.getElementById("score");
@@ -99,12 +103,16 @@ function startGame() {
     nightCenterRow = 3;
     nightCenterCol = 6;
     nightTimeCount = 0;
+    hiddenCells = [];
+    memorySelected = [];
+    clearInterval(memoryHideTimer);
 
     updateScore();
     updateLevel();
     updateLive();
     updateHintCount();
     updateShuffleCount();
+    updateShuffleButton();
     updatePauseButton();
     updateSoundButton();
 
@@ -138,6 +146,9 @@ function startLevel(selectedLevel) {
     nightCenterRow = 3;
     nightCenterCol = 6;
     nightTimeCount = 0;
+    hiddenCells = [];
+    memorySelected = [];
+    clearInterval(memoryHideTimer);
 
     lives = 5 - (level - 1);
 
@@ -147,7 +158,9 @@ function startLevel(selectedLevel) {
 
     hintCount = Math.max(0, 3 - (level - 1));
 
-    if (level === 2 || level === 3) {
+    if (level === 5) {
+        shuffleCount = 0;
+    } else if (level === 2 || level === 3) {
         shuffleCount = 2;
     } else {
         shuffleCount = 1;
@@ -157,6 +170,7 @@ function startLevel(selectedLevel) {
     updateLive();
     updateHintCount();
     updateShuffleCount();
+    updateShuffleButton();
     updatePauseButton();
 
     time = 300 - (level - 1) * 10;
@@ -187,7 +201,7 @@ function startLevel(selectedLevel) {
     }
 
     if (level === 5) {
-        createBoard();
+        setupLevel5();
     }
 
     renderBoard();
@@ -379,7 +393,52 @@ function setupLevel3() {
 
     createBoard();
     createLevel3Elements();
+}
 
+function setupLevel5() {
+    createBoard();
+
+    hiddenCells = [];
+    memorySelected = [];
+
+    startMemoryHide();
+}
+
+function startMemoryHide() {
+    clearInterval(memoryHideTimer);
+
+    memoryHideTimer = setInterval(function () {
+        if (paused || gameEnded) {
+            return;
+        }
+
+        hiddenCells = [];
+
+        let positions = [];
+
+        for (let row = 0; row < ROWS; row++) {
+            for (let col = 0; col < COLUMNS; col++) {
+                if (board[row][col] >= 0) {
+                    positions.push({
+                        row: row,
+                        col: col
+                    });
+                }
+            }
+        }
+
+        shuffle(positions);
+
+        for (let i = 0; i < Math.min(4, positions.length); i++) {
+            hiddenCells.push(positions[i]);
+        }
+
+        memorySelected = [];
+
+        renderBoard();
+
+        showMessage("4 ô hình đã được che lại");
+    }, 5000);
 }
 
 function createLevel2Obstacles() {
@@ -768,7 +827,6 @@ function renderBoard() {
 
     for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLUMNS; col++) {
-
             let cell = document.createElement("div");
 
             cell.className = "cell";
@@ -790,6 +848,25 @@ function renderBoard() {
                 ) {
                     nightVisible = false;
                     cell.classList.add("night-hidden");
+                }
+            }
+
+            let showMemoryImage = true;
+
+            if (level === 5) {
+                let isHidden = hiddenCells.some(function (position) {
+                    return position.row === row &&
+                        position.col === col;
+                });
+
+                let isSelected = memorySelected.some(function (position) {
+                    return position.row === row &&
+                        position.col === col;
+                });
+
+                if (isHidden && !isSelected) {
+                    showMemoryImage = false;
+                    cell.classList.add("memory-hidden");
                 }
             }
 
@@ -838,7 +915,8 @@ function renderBoard() {
 
             } else if (
                 board[row][col] !== -1 &&
-                nightVisible
+                nightVisible &&
+                showMemoryImage
             ) {
                 let image = document.createElement("img");
 
@@ -864,6 +942,11 @@ function clickCell(event) {
 
     let row = Number(cell.dataset.row);
     let col = Number(cell.dataset.col);
+
+    if (level === 5) {
+        clickMemoryCell(row, col);
+        return;
+    }
 
     if (level === 4) {
         let rowDistance =
@@ -927,6 +1010,71 @@ function clickCell(event) {
         row: row,
         col: col
     });
+}
+
+function clickMemoryCell(row, col) {
+    if (board[row][col] === -1) {
+        return;
+    }
+
+    if (
+        memorySelected.some(function (position) {
+            return position.row === row &&
+                position.col === col;
+        })
+    ) {
+        return;
+    }
+
+    memorySelected.push({
+        row: row,
+        col: col
+    });
+
+    renderBoard();
+
+    if (memorySelected.length < 2) {
+        showMessage("Hãy chọn thêm một hình");
+        return;
+    }
+
+    let first = memorySelected[0];
+    let second = memorySelected[1];
+
+    if (
+        board[first.row][first.col] ===
+        board[second.row][second.col]
+    ) {
+        board[first.row][first.col] = -1;
+        board[second.row][second.col] = -1;
+
+        memorySelected = [];
+
+        score += 10;
+
+        updateScore();
+
+        playSound(correctSound);
+
+        if (checkWin()) {
+            renderBoard();
+            winLevel();
+            return;
+        }
+
+        renderBoard();
+
+        showMessage("Đúng cặp");
+    } else {
+        playSound(wrongSound);
+
+        showMessage("Sai cặp");
+
+        setTimeout(function () {
+            memorySelected = [];
+            renderBoard();
+        }, 700);
+    }
 }
 
 function activateSkill(row, col) {
@@ -1488,7 +1636,7 @@ function checkWin() {
 
 function winLevel() {
     clearInterval(timer);
-
+    clearInterval(memoryHideTimer);
     gameEnded = true;
 
     score += 50;
@@ -1528,7 +1676,9 @@ function winLevel() {
         hintCount =
             Math.max(0, 3 - (level - 1));
 
-        if (level === 2 || level === 3) {
+        if (level === 5) {
+            shuffleCount = 0;
+        } else if (level === 2 || level === 3) {
             shuffleCount = 2;
         } else {
             shuffleCount = 1;
@@ -1537,6 +1687,7 @@ function winLevel() {
         updateLive();
         updateHintCount();
         updateShuffleCount();
+        updateShuffleButton();
         updatePauseButton();
 
         time =
@@ -1566,6 +1717,8 @@ function winLevel() {
             createBoard();
             ensureLevel4Move();
 
+        } else if (level === 5) {
+            setupLevel5();
         } else {
             createBoard();
         }
@@ -1682,10 +1835,6 @@ function findPath(start, end) {
 
 function updateLevel() {
     levelElement.textContent = level;
-}
-
-function getKey(row, col, direction) {
-    return row + "-" + col + "-" + direction;
 }
 
 function canGo(row, col, start, end) {
@@ -2194,6 +2343,14 @@ function updateShuffleCount() {
     }
 }
 
+function updateShuffleButton() {
+    if (level === 5) {
+        shuffleButton.style.display = "none";
+    } else {
+        shuffleButton.style.display = "";
+    }
+}
+
 newButton.addEventListener("click", function () {
     startGame();
 });
@@ -2222,6 +2379,10 @@ levelSelectButtons.forEach(function (button) {
 hintButton.addEventListener("click", function () {
 
     if (gameEnded) {
+        if (level === 5) {
+            showMessage("Level 5 không sử dụng gợi ý");
+            return;
+        }
         showMessage("Game đã kết thúc");
         return;
     }
@@ -2245,6 +2406,10 @@ hintButton.addEventListener("click", function () {
 });
 
 shuffleButton.addEventListener("click", function () {
+    if (level === 5) {
+        showMessage("Level 5 không sử dụng xáo trộn");
+        return;
+    }
 
     if (gameEnded) {
         showMessage("Game đã kết thúc");
@@ -2252,19 +2417,12 @@ shuffleButton.addEventListener("click", function () {
     }
 
     if (paused) {
-        showMessage(
-            "Game đang tạm dừng"
-        );
-
+        showMessage("Game đang tạm dừng");
         return;
     }
 
     if (shuffleCount <= 0) {
-
-        showMessage(
-            "Bạn đã hết lượt xáo trộn"
-        );
-
+        showMessage("Bạn đã hết lượt xáo trộn");
         return;
     }
 
@@ -2320,8 +2478,8 @@ soundButton.addEventListener("click", function () {
 });
 
 exitButton.addEventListener("click", function () {
-
     clearInterval(timer);
+    clearInterval(memoryHideTimer);
 
     gameEnded = true;
     paused = false;
