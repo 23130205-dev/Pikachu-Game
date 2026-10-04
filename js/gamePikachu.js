@@ -113,6 +113,8 @@ function startGame() {
     updateHintCount();
     updateShuffleCount();
     updateShuffleButton();
+    document.querySelector(".hint-count").style.display = "";
+    document.querySelector(".shuffle-count").style.display = "";
     updatePauseButton();
     updateSoundButton();
 
@@ -170,6 +172,8 @@ function startLevel(selectedLevel) {
     updateLive();
     updateHintCount();
     updateShuffleCount();
+    document.querySelector(".hint-count").style.display = "";
+    document.querySelector(".shuffle-count").style.display = "";
     updateShuffleButton();
     updatePauseButton();
 
@@ -2487,6 +2491,9 @@ exitButton.addEventListener("click", function () {
 
     clearPath();
     removeSelected();
+
+    document.querySelector(".hint-count").style.display = "none";
+    document.querySelector(".shuffle-count").style.display = "none";
 
     boardElement.innerHTML = "";
 
