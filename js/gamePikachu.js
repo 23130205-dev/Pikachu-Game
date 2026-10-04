@@ -39,13 +39,11 @@ let transformMoveCount = 0;
 let nightCenterRow = 3;
 let nightCenterCol = 6;
 let nightRadius = 3;
-let nightMoveCount = 0;
 let nightTimeCount = 0;
 
 const boardElement = document.getElementById("board");
 const scoreElement = document.getElementById("score");
 const levelElement = document.getElementById("level");
-const movesElement = document.getElementById("moves");
 const messageElement = document.getElementById("message");
 const pathElement = document.getElementById("path");
 const timeElement = document.getElementById("time");
@@ -100,7 +98,6 @@ function startGame() {
     transformMoveCount = 0;
     nightCenterRow = 3;
     nightCenterCol = 6;
-    nightMoveCount = 0;
     nightTimeCount = 0;
 
     updateScore();
@@ -110,7 +107,6 @@ function startGame() {
     updateShuffleCount();
     updatePauseButton();
     updateSoundButton();
-    updateMoves();
 
     boardElement.classList.remove("game-exited");
 
@@ -141,7 +137,6 @@ function startLevel(selectedLevel) {
     transformMoveCount = 0;
     nightCenterRow = 3;
     nightCenterCol = 6;
-    nightMoveCount = 0;
     nightTimeCount = 0;
 
     lives = 5 - (level - 1);
@@ -163,7 +158,6 @@ function startLevel(selectedLevel) {
     updateHintCount();
     updateShuffleCount();
     updatePauseButton();
-    updateMoves();
 
     time = 300 - (level - 1) * 10;
 
@@ -1117,45 +1111,14 @@ function removePair(first, second) {
 
     if (level === 2) {
         moveCount++;
-
-        updateMoves();
         handleLevel2Move();
     }
 
     if (level === 3) {
         transformMoveCount++;
-        updateMoves();
-    }
+      }
 
-    if (level === 4) {
-        nightMoveCount++;
-
-        if (!hasLevel4Move()) {
-            nightMoveCount = 0;
-
-            ensureLevel4Move();
-
-            showMessage(
-                "Vùng sáng đã hết nước đi, vùng nhìn đã thay đổi"
-            );
-        } else if (nightMoveCount >= 2) {
-            nightMoveCount = 0;
-
-            nightCenterRow =
-                Math.floor(Math.random() * (ROWS - 2)) + 1;
-
-            nightCenterCol =
-                Math.floor(Math.random() * (COLUMNS - 2)) + 1;
-
-            ensureLevel4Move();
-
-            showMessage(
-                "Vùng nhìn trong bóng tối đã thay đổi"
-            );
-        }
-    }
-
-    if (doubleScore) {
+        if (doubleScore) {
         score += 20;
         doubleScore = false;
     } else {
@@ -1181,7 +1144,7 @@ function removePair(first, second) {
         transformLevel3Board();
     }
 
-      renderBoard();
+    renderBoard();
 
     if (!hasMove()) {
         showMessage("Không còn nước đi");
@@ -1586,10 +1549,8 @@ function winLevel() {
         transformMoveCount = 0;
         nightCenterRow = 3;
         nightCenterCol = 6;
-        nightMoveCount = 0;
         nightTimeCount = 0;
 
-        updateMoves();
         updateTime();
 
         if (level === 2) {
@@ -1834,19 +1795,6 @@ function removeSelected() {
 
 function updateScore() {
     scoreElement.textContent = score;
-}
-
-function updateMoves() {
-    if (!movesElement) {
-        return;
-    }
-
-    if (level === 3) {
-        movesElement.textContent =
-            (transformMoveCount % 2) + "/2";
-    } else {
-        movesElement.textContent = "-";
-    }
 }
 
 function showMessage(text) {
