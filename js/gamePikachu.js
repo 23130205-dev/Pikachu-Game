@@ -1,5 +1,5 @@
-const ROWS = 8;
-const COLUMNS = 14;
+const ROWS = 9;
+const COLUMNS = 16;
 const MAX_LEVEL = 5;
 
 const images = [
@@ -13,7 +13,8 @@ const images = [
     "images/pikachu8.png",
     "images/pikachu9.png",
     "images/pikachu10.png",
-    "images/pikachu11.png"
+    "images/pikachu11.png",
+    "images/pikachu12.png"
 ];
 
 let board = [];
@@ -268,7 +269,7 @@ function startTimer() {
                     "Bóng tối đã thay đổi vị trí nhìn"
                 );
             }
-}
+        }
         if (time <= 0) {
             gameOver();
         }
@@ -1362,9 +1363,9 @@ function rotateLevel2Area() {
     ) {
         board[
             positions[i].row
-        ][
+            ][
             positions[i].col
-        ] = values[i];
+            ] = values[i];
     }
 }
 
@@ -1508,9 +1509,9 @@ function rotateLevel3Area() {
     ) {
         board[
             positions[i].row
-        ][
+            ][
             positions[i].col
-        ] = values[i];
+            ] = values[i];
     }
 }
 
@@ -1847,7 +1848,7 @@ function canGo(row, col, start, end) {
 function drawPath(path) {
     clearPath();
 
-    const cellSize = 62;
+    const cellSize = 56 ;
 
     let points = "";
 
@@ -1856,10 +1857,10 @@ function drawPath(path) {
         let point = path[i];
 
         let x =
-            point.col * cellSize + 31;
+            point.col * cellSize + 28;
 
         let y =
-            point.row * cellSize + 31;
+            point.row * cellSize + 28;
 
         if (point.col === -1) {
             x = 0;
@@ -2090,7 +2091,7 @@ function shuffleBoard() {
     } while (
         !hasMove() &&
         count < 100
-    );
+        );
 
     renderBoard();
 

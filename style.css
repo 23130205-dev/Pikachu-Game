@@ -14,7 +14,7 @@ body {
 }
 
 .game-container {
-    width: 980px;
+    width: 1050px;
     padding: 15px;
     background-color: #181818;
     border: 2px solid #555;
@@ -275,16 +275,16 @@ body {
     /*width: 866px;*/
     /*height: 494px;*/
     display: grid;
-    grid-template-columns: repeat(14, 60px);
-    grid-template-rows: repeat(8, 60px);
+    grid-template-columns: repeat(16, 54px);
+    grid-template-rows: repeat(9, 54px);
     gap: 2px;
     position: relative;
     z-index: 2;
 }
 
 .cell {
-    width: 60px;
-    height: 60px;
+    width: 54px;
+    height: 54px;
     background-color: #fabbda;
     border: 1px solid #ee82bb;
     display: flex;
@@ -331,8 +331,8 @@ body {
 }
 
 .cell img {
-    width: 54px;
-    height: 54px;
+    width: 48px;
+    height: 48px;
     object-fit: contain;
     user-select: none;
     pointer-events: none;
