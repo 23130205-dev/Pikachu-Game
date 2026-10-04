@@ -31,11 +31,11 @@ let gameEnded = false;
 let paused = false;
 let sound = true;
 let moveCount = 0;
-let maxMoves = 60;
 let obstacles = [];
 let skillCells = [];
 let skillActivated = 0;
 let doubleScore = false;
+let transformMoveCount = 0;
 let nightCenterRow = 3;
 let nightCenterCol = 6;
 let nightRadius = 3;
@@ -51,7 +51,6 @@ const pathElement = document.getElementById("path");
 const timeElement = document.getElementById("time");
 const timeProgress = document.getElementById("timeProgress");
 
-const clickSound = document.getElementById("clickSound");
 const correctSound = document.getElementById("correctSound");
 const wrongSound = document.getElementById("wrongSound");
 const levelUpSound = document.getElementById("levelUpSound");
@@ -98,6 +97,7 @@ function startGame() {
     skillCells = [];
     skillActivated = 0;
     doubleScore = false;
+    transformMoveCount = 0;
     nightCenterRow = 3;
     nightCenterCol = 6;
     nightMoveCount = 0;
@@ -138,6 +138,7 @@ function startLevel(selectedLevel) {
     skillCells = [];
     skillActivated = 0;
     doubleScore = false;
+    transformMoveCount = 0;
     nightCenterRow = 3;
     nightCenterCol = 6;
     nightMoveCount = 0;
@@ -373,7 +374,7 @@ function setupLevel2() {
 
 function setupLevel3() {
     moveCount = 0;
-    maxMoves = 60;
+    transformMoveCount = 0;
     obstacles = [];
     skillCells = [];
     skillActivated = 0;
@@ -381,6 +382,7 @@ function setupLevel3() {
 
     createBoard();
     createLevel3Elements();
+
 }
 
 function createLevel2Obstacles() {
@@ -605,19 +607,20 @@ function createLevel3Elements() {
 
     let pairValues = [];
 
-    for (let i = 0; i < 50; i++) {
-        let type = i % images.length;
+    let pairCount =
+        (ROWS * COLUMNS - obstacles.length - skillCells.length) / 2;
 
-        pairValues.push(type);
-        pairValues.push(type);
+    for (let i = 0; i < pairCount; i++) {
+        pairValues.push(i % images.length);
+        pairValues.push(i % images.length);
     }
+
+    shuffle(pairValues);
 
     let count = 0;
 
     do {
-        pairValues.sort(function () {
-            return Math.random() - 0.5;
-        });
+        shuffle(pairValues);
 
         let index = 0;
 
@@ -737,21 +740,6 @@ function createLevel3Elements() {
     ensureLevel3Move();
 }
 
-function isLevel3SpecialCell(row, col) {
-    if (
-        obstacles.some(function (obstacle) {
-            return obstacle.row === row &&
-                obstacle.col === col;
-        })
-    ) {
-        return true;
-    }
-
-    return skillCells.some(function (skill) {
-        return skill.row === row &&
-            skill.col === col;
-    });
-}
 
 function getSkill(row, col) {
     return skillCells.find(function (skill) {
@@ -765,14 +753,6 @@ function isObstacle(row, col) {
         return obstacle.row === row &&
             obstacle.col === col;
     });
-}
-
-function isLevel3BlockedCell(row, col) {
-    if (isObstacle(row, col)) {
-        return true;
-    }
-
-    return getSkill(row, col) !== undefined;
 }
 
 function shuffle(array) {
@@ -957,12 +937,19 @@ function activateSkill(row, col) {
         return;
     }
 
-    let skill = getSkill(row, col);
+    let skillIndex = skillCells.findIndex(function (skill) {
+        return skill.row === row &&
+            skill.col === col;
+    });
 
-    if (!skill) {
+    if (skillIndex === -1) {
         return;
     }
 
+    let skill = skillCells[skillIndex];
+
+    skillCells.splice(skillIndex, 1);
+    board[row][col] = -1;
     skillActivated++;
 
     if (skill.type === "teleport") {
@@ -981,23 +968,13 @@ function activateSkill(row, col) {
         useFreezeSkill();
     }
 
-    board[row][col] = -1;
-
-    if (skillActivated >= 3) {
-        showMessage(
-            "Đã kích hoạt " +
-            skillActivated +
-            "/4 kỹ năng"
-        );
-    }
-
     renderBoard();
 
-    if (skillActivated >= 3) {
-        showMessage(
-            "Đã kích hoạt đủ 3 kỹ năng! Tiếp tục ghép hình."
-        );
-    }
+    showMessage(
+        "Đã kích hoạt " +
+        skillActivated +
+        "/4 kỹ năng"
+    );
 }
 
 function useTeleportSkill() {
@@ -1006,13 +983,11 @@ function useTeleportSkill() {
 
     for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLUMNS; col++) {
-
             if (board[row][col] === -1) {
                 emptyCells.push({
                     row: row,
                     col: col
                 });
-
             } else if (
                 board[row][col] >= 0 &&
                 !isObstacle(row, col) &&
@@ -1034,18 +1009,15 @@ function useTeleportSkill() {
         return;
     }
 
-    let imageIndex =
-        Math.floor(
-            Math.random() * imageCells.length
-        );
+    let imageCell =
+        imageCells[
+            Math.floor(Math.random() * imageCells.length)
+            ];
 
-    let emptyIndex =
-        Math.floor(
-            Math.random() * emptyCells.length
-        );
-
-    let imageCell = imageCells[imageIndex];
-    let emptyCell = emptyCells[emptyIndex];
+    let emptyCell =
+        emptyCells[
+            Math.floor(Math.random() * emptyCells.length)
+            ];
 
     board[emptyCell.row][emptyCell.col] =
         board[imageCell.row][imageCell.col];
@@ -1151,8 +1123,7 @@ function removePair(first, second) {
     }
 
     if (level === 3) {
-        moveCount++;
-
+        transformMoveCount++;
         updateMoves();
     }
 
@@ -1197,27 +1168,12 @@ function removePair(first, second) {
 
     if (
         level === 3 &&
-        moveCount >= maxMoves
+        transformMoveCount % 2 === 0
     ) {
-        renderBoard();
-
-        gameEnded = true;
-        clearInterval(timer);
-
-        showMessage(
-            "Bạn đã hết " +
-            maxMoves +
-            " lượt! GAME OVER"
-        );
-
-        return;
+        transformLevel3Board();
     }
 
-    if (level === 3) {
-        handleLevel3Move();
-    }
-
-    renderBoard();
+      renderBoard();
 
     if (!hasMove()) {
         showMessage("Không còn nước đi");
@@ -1269,43 +1225,65 @@ function handleLevel2Move() {
     }
 }
 
-function handleLevel3Move() {
-    if (moveCount % 6 === 0) {
+function transformLevel3Board() {
+    let typePositions = {};
 
-        rotateLevel3Area();
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLUMNS; col++) {
+            let value = board[row][col];
 
-        ensureLevel3Move();
+            if (value >= 0) {
+                if (!typePositions[value]) {
+                    typePositions[value] = [];
+                }
 
-        showMessage(
-            "Khu vực bản đồ đã được thay đổi"
-        );
+                typePositions[value].push({
+                    row: row,
+                    col: col
+                });
+            }
+        }
+    }
 
+    let types = Object.keys(typePositions).map(Number);
+
+    if (types.length < 2) {
         return;
     }
 
-    if (moveCount % 4 === 0) {
+    shuffle(types);
 
-        moveRandomColumn();
+    let typeA = types[0];
+    let typeB = types[1];
 
-        ensureLevel3Move();
+    let positionsA = typePositions[typeA];
+    let positionsB = typePositions[typeB];
 
-        showMessage(
-            "Một cột đã được thay đổi vị trí"
-        );
+    let changeCount = Math.min(
+        Math.floor(positionsA.length / 2),
+        Math.floor(positionsB.length / 2)
+    );
 
+    if (changeCount < 1) {
         return;
     }
 
-    if (moveCount % 2 === 0) {
+    shuffle(positionsA);
+    shuffle(positionsB);
 
-        moveRandomRow();
+    for (let i = 0; i < changeCount; i++) {
+        let cellA = positionsA[i];
+        let cellB = positionsB[i];
 
-        ensureLevel3Move();
-
-        showMessage(
-            "Một hàng đã được thay đổi vị trí"
-        );
+        board[cellA.row][cellA.col] = typeB;
+        board[cellB.row][cellB.col] = typeA;
     }
+
+    ensureLevel3Move();
+
+    showMessage(
+        "Sau 2 cặp, một số hình trên bàn đã tự động biến đổi"
+    );
 }
 
 function ensureLevel3Move() {
@@ -1463,58 +1441,6 @@ function ensureLevel4Move() {
     return false;
 }
 
-function rotateLevel3Area() {
-    const startRow = 2;
-    const startCol = 5;
-    const size = 4;
-
-    let positions = [];
-    let values = [];
-
-    for (
-        let row = startRow;
-        row < startRow + size;
-        row++
-    ) {
-        for (
-            let col = startCol;
-            col < startCol + size;
-            col++
-        ) {
-
-            if (!isLevel3BlockedCell(row, col)) {
-
-                positions.push({
-                    row: row,
-                    col: col
-                });
-
-                values.push(board[row][col]);
-            }
-        }
-    }
-
-    if (values.length <= 1) {
-        return;
-    }
-
-    let lastValue = values.pop();
-
-    values.unshift(lastValue);
-
-    for (
-        let i = 0;
-        i < positions.length;
-        i++
-    ) {
-        board[
-            positions[i].row
-            ][
-            positions[i].col
-            ] = values[i];
-    }
-}
-
 function moveRandomRow() {
     let row =
         Math.floor(Math.random() * ROWS);
@@ -1526,7 +1452,7 @@ function moveRandomRow() {
         col < COLUMNS;
         col++
     ) {
-        if (!isLevel3BlockedCell(row, col)) {
+        if (!isObstacle(row, col)) {
             positions.push(col);
         }
     }
@@ -1564,7 +1490,7 @@ function moveRandomColumn() {
         row < ROWS;
         row++
     ) {
-        if (!isLevel3BlockedCell(row, col)) {
+        if (!isObstacle(row, col)) {
             positions.push(row);
         }
     }
@@ -1667,6 +1593,7 @@ function winLevel() {
         maxTime = time;
 
         moveCount = 0;
+        transformMoveCount = 0;
         nightCenterRow = 3;
         nightCenterCol = 6;
         nightMoveCount = 0;
@@ -1926,7 +1853,7 @@ function updateMoves() {
 
     if (level === 3) {
         movesElement.textContent =
-            maxMoves - moveCount;
+            (transformMoveCount % 2) + "/2";
     } else {
         movesElement.textContent = "-";
     }
