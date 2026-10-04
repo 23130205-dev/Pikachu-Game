@@ -1130,7 +1130,15 @@ function removePair(first, second) {
     if (level === 4) {
         nightMoveCount++;
 
-        if (nightMoveCount >= 2) {
+        if (!hasLevel4Move()) {
+            nightMoveCount = 0;
+
+            ensureLevel4Move();
+
+            showMessage(
+                "Vùng sáng đã hết nước đi, vùng nhìn đã thay đổi"
+            );
+        } else if (nightMoveCount >= 2) {
             nightMoveCount = 0;
 
             nightCenterRow =
@@ -1347,53 +1355,42 @@ function rotateLevel2Area() {
     }
 }
 
-function ensureLevel4Move() {
-    let count = 0;
+function hasLevel4Move() {
+    for (let row1 = 0; row1 < ROWS; row1++) {
+        for (let col1 = 0; col1 < COLUMNS; col1++) {
+            if (board[row1][col1] < 0) {
+                continue;
+            }
 
-    while (count < 100) {
+            if (
+                Math.abs(row1 - nightCenterRow) > nightRadius ||
+                Math.abs(col1 - nightCenterCol) > nightRadius
+            ) {
+                continue;
+            }
 
-        let found = false;
+            for (let row2 = 0; row2 < ROWS; row2++) {
+                for (let col2 = 0; col2 < COLUMNS; col2++) {
+                    if (
+                        row1 === row2 &&
+                        col1 === col2
+                    ) {
+                        continue;
+                    }
 
-        for (let row1 = 0; row1 < ROWS; row1++) {
+                    if (board[row1][col1] !== board[row2][col2]) {
+                        continue;
+                    }
 
-            for (let col1 = 0; col1 < COLUMNS; col1++) {
+                    if (
+                        Math.abs(row2 - nightCenterRow) > nightRadius ||
+                        Math.abs(col2 - nightCenterCol) > nightRadius
+                    ) {
+                        continue;
+                    }
 
-                if (board[row1][col1] < 0) {
-                    continue;
-                }
-
-                let visible1 =
-                    Math.abs(row1 - nightCenterRow) <= nightRadius &&
-                    Math.abs(col1 - nightCenterCol) <= nightRadius;
-
-                if (!visible1) {
-                    continue;
-                }
-
-                for (let row2 = 0; row2 < ROWS; row2++) {
-
-                    for (let col2 = 0; col2 < COLUMNS; col2++) {
-
-                        if (
-                            row1 === row2 &&
-                            col1 === col2
-                        ) {
-                            continue;
-                        }
-
-                        if (board[row1][col1] !== board[row2][col2]) {
-                            continue;
-                        }
-
-                        let visible2 =
-                            Math.abs(row2 - nightCenterRow) <= nightRadius &&
-                            Math.abs(col2 - nightCenterCol) <= nightRadius;
-
-                        if (!visible2) {
-                            continue;
-                        }
-
-                        let path = findPath(
+                    if (
+                        findPath(
                             {
                                 row: row1,
                                 col: col1
@@ -1402,30 +1399,23 @@ function ensureLevel4Move() {
                                 row: row2,
                                 col: col2
                             }
-                        );
-
-                        if (path !== null) {
-                            found = true;
-                            break;
-                        }
-                    }
-
-                    if (found) {
-                        break;
+                        ) !== null
+                    ) {
+                        return true;
                     }
                 }
-
-                if (found) {
-                    break;
-                }
-            }
-
-            if (found) {
-                break;
             }
         }
+    }
 
-        if (found) {
+    return false;
+}
+
+function ensureLevel4Move() {
+    let count = 0;
+
+    while (count < 100) {
+        if (hasLevel4Move()) {
             return true;
         }
 
@@ -1438,7 +1428,7 @@ function ensureLevel4Move() {
         count++;
     }
 
-    return false;
+    return hasLevel4Move();
 }
 
 function moveRandomRow() {
