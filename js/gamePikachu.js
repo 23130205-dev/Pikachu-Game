@@ -201,7 +201,7 @@ function startLevel(selectedLevel) {
 
     if (level === 4) {
         createBoard();
-        ensureLevel4Move();
+        findLevel4Center();
     }
 
     if (level === 5) {
@@ -265,25 +265,16 @@ function startTimer() {
         if (level === 4) {
             nightTimeCount++;
 
-            if (nightTimeCount >= 8) {
+            if (nightTimeCount >= 15) {
                 nightTimeCount = 0;
 
                 removeSelected();
                 clearPath();
 
-                nightCenterRow =
-                    Math.floor(Math.random() * (ROWS - 2)) + 1;
-
-                nightCenterCol =
-                    Math.floor(Math.random() * (COLUMNS - 2)) + 1;
-
-                ensureLevel4Move();
-
-                renderBoard();
-
-                showMessage(
-                    "Bóng tối đã thay đổi vị trí nhìn"
-                );
+                if (findLevel4Center()) {
+                    renderBoard();
+                    showMessage("Bóng tối đã thay đổi vị trí nhìn");
+                }
             }
         }
         if (time <= 0) {
@@ -374,8 +365,10 @@ function createBoard() {
 
     } while (count < 100);
 
-    while (!hasMove()) {
-        shuffleBoardData();
+    if (level !== 4) {
+        while (!hasMove()) {
+            shuffleBoardData();
+        }
     }
 }
 
@@ -1132,7 +1125,11 @@ function useTeleportSkill() {
 
     for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLUMNS; col++) {
-            if (board[row][col] === -1) {
+            if (
+                board[row][col] === -1 &&
+                !isObstacle(row, col) &&
+                !getSkill(row, col)
+            ) {
                 emptyCells.push({
                     row: row,
                     col: col
@@ -1271,9 +1268,9 @@ function removePair(first, second) {
 
     if (level === 3) {
         transformMoveCount++;
-      }
+    }
 
-        if (doubleScore) {
+    if (doubleScore) {
         score += 20;
         doubleScore = false;
     } else {
@@ -1298,20 +1295,35 @@ function removePair(first, second) {
     ) {
         transformLevel3Board();
     }
-
     renderBoard();
 
-    if (!hasMove()) {
-        showMessage("Không còn nước đi");
+    if (level === 4) {
+        if (!hasLevel4Move()) {
 
-        setTimeout(function () {
-            if (!gameEnded) {
-                shuffleBoard();
-            }
-        }, 800);
+            nightTimeCount = 0;
 
-    } else {
-        showMessage("Đã nối thành công");
+            showMessage(
+                "Không còn nước đi - đang chuyển vùng sáng"
+            );
+
+            setTimeout(function () {
+                if (!gameEnded && level === 4) {
+
+                    if (findLevel4Center()) {
+                        renderBoard();
+
+                        showMessage(
+                            "Bóng tối đã thay đổi vị trí nhìn"
+                        );
+                    }
+                }
+            }, 300);
+
+        } else {
+            showMessage("Đã nối thành công");
+        }
+
+        return;
     }
 }
 
@@ -1474,8 +1486,11 @@ function rotateLevel2Area() {
 }
 
 function hasLevel4Move() {
+
     for (let row1 = 0; row1 < ROWS; row1++) {
+
         for (let col1 = 0; col1 < COLUMNS; col1++) {
+
             if (board[row1][col1] < 0) {
                 continue;
             }
@@ -1488,7 +1503,9 @@ function hasLevel4Move() {
             }
 
             for (let row2 = 0; row2 < ROWS; row2++) {
+
                 for (let col2 = 0; col2 < COLUMNS; col2++) {
+
                     if (
                         row1 === row2 &&
                         col1 === col2
@@ -1496,7 +1513,10 @@ function hasLevel4Move() {
                         continue;
                     }
 
-                    if (board[row1][col1] !== board[row2][col2]) {
+                    if (
+                        board[row1][col1] !==
+                        board[row2][col2]
+                    ) {
                         continue;
                     }
 
@@ -1507,18 +1527,18 @@ function hasLevel4Move() {
                         continue;
                     }
 
-                    if (
-                        findPath(
-                            {
-                                row: row1,
-                                col: col1
-                            },
-                            {
-                                row: row2,
-                                col: col2
-                            }
-                        ) !== null
-                    ) {
+                    let path = findPath(
+                        {
+                            row: row1,
+                            col: col1
+                        },
+                        {
+                            row: row2,
+                            col: col2
+                        }
+                    );
+
+                    if (path !== null) {
                         return true;
                     }
                 }
@@ -1529,24 +1549,53 @@ function hasLevel4Move() {
     return false;
 }
 
-function ensureLevel4Move() {
-    let count = 0;
 
-    while (count < 100) {
-        if (hasLevel4Move()) {
-            return true;
+function findLevel4Center() {
+    let centers = [];
+
+    for (let row = 1; row < ROWS - 1; row++) {
+        for (let col = 1; col < COLUMNS - 1; col++) {
+
+            if (
+                row === nightCenterRow &&
+                col === nightCenterCol
+            ) {
+                continue;
+            }
+
+            let oldRow = nightCenterRow;
+            let oldCol = nightCenterCol;
+
+            nightCenterRow = row;
+            nightCenterCol = col;
+
+            let hasMove = hasLevel4Move();
+
+            nightCenterRow = oldRow;
+            nightCenterCol = oldCol;
+
+            if (hasMove) {
+                centers.push({
+                    row: row,
+                    col: col
+                });
+            }
         }
-
-        nightCenterRow =
-            Math.floor(Math.random() * (ROWS - 2)) + 1;
-
-        nightCenterCol =
-            Math.floor(Math.random() * (COLUMNS - 2)) + 1;
-
-        count++;
     }
 
-    return hasLevel4Move();
+    if (centers.length === 0) {
+        return false;
+    }
+
+    let center =
+        centers[
+            Math.floor(Math.random() * centers.length)
+            ];
+
+    nightCenterRow = center.row;
+    nightCenterCol = center.col;
+
+    return true;
 }
 
 function moveRandomRow() {
@@ -1719,7 +1768,7 @@ function winLevel() {
 
         } else if (level === 4) {
             createBoard();
-            ensureLevel4Move();
+            findLevel4Center();
 
         } else if (level === 5) {
             setupLevel5();
