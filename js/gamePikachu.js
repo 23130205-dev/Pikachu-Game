@@ -211,7 +211,13 @@ function startLevel(selectedLevel) {
     renderBoard();
     startTimer();
 
-    showMessage("Level " + level + ": Hãy chọn 2 hình giống nhau");
+    if (level === 5) {
+        showMessage("Hãy ghi nhớ vị trí các hình!");
+    } else {
+        showMessage(
+            "Level " + level + ": Hãy chọn 2 hình giống nhau"
+        );
+    }
 }
 
 function updateLive() {
@@ -1058,11 +1064,30 @@ function clickLevel5Cell(row, col) {
         board[first.row][first.col] !==
         board[second.row][second.col]
     ) {
+        let cells = document.querySelectorAll(".cell");
+
+        cells.forEach(function (cell) {
+            let row = Number(cell.dataset.row);
+            let col = Number(cell.dataset.col);
+
+            if (
+                (row === first.row && col === first.col) ||
+                (row === second.row && col === second.col)
+            ) {
+                cell.classList.remove("selected");
+                cell.classList.add("pair-wrong");
+            }
+        });
+
         playSound(wrongSound);
 
         showMessage("Sai cặp");
 
         setTimeout(function () {
+            cells.forEach(function (cell) {
+                cell.classList.remove("pair-wrong");
+            });
+
             memorySelected = [];
             renderBoard();
         }, 700);
@@ -1073,11 +1098,30 @@ function clickLevel5Cell(row, col) {
     let path = findPath(first, second);
 
     if (path === null) {
+        cells.forEach(function (cell) {
+            let row = Number(cell.dataset.row);
+            let col = Number(cell.dataset.col);
+
+            if (
+                (row === first.row && col === first.col) ||
+                (row === second.row && col === second.col)
+            ) {
+                cell.classList.remove("selected");
+                cell.classList.add("pair-wrong");
+            }
+        });
+
+        playSound(wrongSound);
+
         showMessage(
             "Hai hình giống nhau nhưng không thể nối"
         );
 
         setTimeout(function () {
+            cells.forEach(function (cell) {
+                cell.classList.remove("pair-wrong");
+            });
+
             memorySelected = [];
             renderBoard();
         }, 700);
@@ -1085,12 +1129,31 @@ function clickLevel5Cell(row, col) {
         return;
     }
 
+    let cells = document.querySelectorAll(".cell");
+
+    cells.forEach(function (cell) {
+        let row = Number(cell.dataset.row);
+        let col = Number(cell.dataset.col);
+
+        if (
+            (row === first.row && col === first.col) ||
+            (row === second.row && col === second.col)
+        ) {
+            cell.classList.remove("selected");
+            cell.classList.add("pair-correct");
+        }
+    });
+
     playSound(correctSound);
 
     drawPath(path);
 
     setTimeout(function () {
         clearPath();
+
+        cells.forEach(function (cell) {
+            cell.classList.remove("pair-correct");
+        });
 
         board[first.row][first.col] = -1;
         board[second.row][second.col] = -1;
@@ -1271,13 +1334,34 @@ function useFreezeSkill() {
 }
 
 function checkPair(first, second) {
+    let cells = document.querySelectorAll(".cell");
+
     if (
         board[first.row][first.col] !==
         board[second.row][second.col]
     ) {
+        cells.forEach(function (cell) {
+            let row = Number(cell.dataset.row);
+            let col = Number(cell.dataset.col);
+
+            if (
+                (row === first.row && col === first.col) ||
+                (row === second.row && col === second.col)
+            ) {
+                cell.classList.remove("selected");
+                cell.classList.add("pair-wrong");
+            }
+        });
+
         handleWrongSelection(
             "Hai hình không giống nhau"
         );
+
+        setTimeout(function () {
+            cells.forEach(function (cell) {
+                cell.classList.remove("pair-wrong");
+            });
+        }, 700);
 
         return;
     }
@@ -1285,23 +1369,57 @@ function checkPair(first, second) {
     let path = findPath(first, second);
 
     if (path !== null) {
+        cells.forEach(function (cell) {
+            let row = Number(cell.dataset.row);
+            let col = Number(cell.dataset.col);
+
+            if (
+                (row === first.row && col === first.col) ||
+                (row === second.row && col === second.col)
+            ) {
+                cell.classList.remove("selected");
+                cell.classList.add("pair-correct");
+            }
+        });
 
         playSound(correctSound);
         drawPath(path);
 
         setTimeout(function () {
-
             clearPath();
-            removePair(first, second);
 
+            cells.forEach(function (cell) {
+                cell.classList.remove("pair-correct");
+            });
+
+            removePair(first, second);
         }, 500);
 
-    } else {
-
-        handleWrongSelection(
-            "Không thể nối hai hình này"
-        );
+        return;
     }
+
+    cells.forEach(function (cell) {
+        let row = Number(cell.dataset.row);
+        let col = Number(cell.dataset.col);
+
+        if (
+            (row === first.row && col === first.col) ||
+            (row === second.row && col === second.col)
+        ) {
+            cell.classList.remove("selected");
+            cell.classList.add("pair-wrong");
+        }
+    });
+
+    handleWrongSelection(
+        "Không thể nối hai hình này"
+    );
+
+    setTimeout(function () {
+        cells.forEach(function (cell) {
+            cell.classList.remove("pair-wrong");
+        });
+    }, 700);
 }
 
 function removePair(first, second) {
@@ -2477,18 +2595,19 @@ levelSelectButtons.forEach(function (button) {
     });
 });
 
-hintButton.addEventListener("click", function () {
+    hintButton.addEventListener("click", function () {
 
-    if (gameEnded) {
         if (level === 5) {
             showMessage("Level 5 không sử dụng gợi ý");
             return;
         }
-        showMessage("Game đã kết thúc");
-        return;
-    }
 
-    if (hintCount <= 0) {
+        if (gameEnded) {
+            showMessage("Game đã kết thúc");
+            return;
+        }
+
+        if (hintCount <= 0) {
         showMessage(
             "Bạn đã hết lượt gợi ý"
         );

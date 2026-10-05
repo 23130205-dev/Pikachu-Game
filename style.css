@@ -350,6 +350,18 @@ body {
     font-weight: bold;
 }
 
+.cell.pair-correct {
+    background-color: #8cff8c !important;
+    border: 3px solid #20a020;
+    box-shadow: 0 0 15px #8cff8c;
+}
+
+.cell.pair-wrong {
+    background-color: #f44336 !important;
+    border: 3px solid #b71c1c;
+    box-shadow: 0 0 15px #f44336;
+}
+
 .night-hidden {
     background: #111827 !important;
     opacity: 0.9;
