@@ -1,6 +1,6 @@
 const ROWS = 9;
 const COLUMNS = 16;
-const MAX_LEVEL = 5;
+const MAX_LEVEL = 6;
 
 const images = [
     "images/pikachu1.png",
@@ -152,7 +152,7 @@ function startLevel(selectedLevel) {
     memorySelected = [];
     clearTimeout(memoryHideTimer);
 
-    lives = 5 - (level - 1);
+    lives = 6 - (level - 1);
 
     if (lives < 1) {
         lives = 1;
