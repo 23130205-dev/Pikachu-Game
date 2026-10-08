@@ -815,8 +815,7 @@ function clickLevel5Cell(row, col) {
     if (board[row][col] === -1) {
         return;
     }
-    let cells = document.querySelectorAll(".cell");
-    let selectedIndex = memorySelected.findIndex(function (position) {
+       let selectedIndex = memorySelected.findIndex(function (position) {
         return position.row === row && position.col === col;
     });
 
@@ -832,7 +831,7 @@ function clickLevel5Cell(row, col) {
     });
 
     renderBoard();
-
+    let cells = document.querySelectorAll(".cell");
     if (memorySelected.length < 2) {
         showMessage("Hãy chọn thêm một hình");
         return;
