@@ -19,6 +19,7 @@ const images = [
 
 let board = [];
 let score = 0;
+let levelScore = 0;
 let level = 1;
 let lives = 5;
 let hintCount = 3;
@@ -84,6 +85,7 @@ function playSound(audio) {
 function startGame() {
     clearInterval(timer);
     score = 0;
+    levelScore = 0;
     level = 1;
     lives = 5;
     selected = null;
@@ -105,6 +107,7 @@ function startGame() {
     clearTimeout(memoryHideTimer);
 
     updateScore();
+    updateLevelScore();
     updateLevel();
     updateLive();
     updateHintCount();
@@ -907,8 +910,7 @@ function clickLevel5Cell(row, col) {
             return !( (position.row === first.row && position.col === first.col) || (position.row === second.row && position.col === second.col));
         });
         memorySelected = [];
-        score += 10;
-        updateScore();
+        addScore(10);
         renderBoard();
         if (checkWin()) {
             winLevel();
@@ -1096,10 +1098,10 @@ function removePair(first, second) {
     }
 
     if (doubleScore) {
-        score += 20;
+        addScore(20);
         doubleScore = false;
     } else {
-        score += 10;
+        addScore(10);
     }
     updateScore();
     clearPath();
@@ -1359,8 +1361,7 @@ function winLevel() {
     clearInterval(timer);
     clearInterval(memoryHideTimer);
     gameEnded = true;
-    score += 50;
-    updateScore();
+    addScore(50);
     playSound(levelUpSound);
     if (level === MAX_LEVEL) {
         showMessage( "Bạn đã hoàn thành tất cả các level" );
@@ -1371,7 +1372,9 @@ function winLevel() {
 
     setTimeout(function () {
         level++;
+        levelScore = 0;
         updateLevel();
+        updateLevelScore();
         gameEnded = false;
         paused = false;
         lives = 5 - (level - 1);
@@ -1553,6 +1556,18 @@ function removeSelected() {
 
 function updateScore() {
     scoreElement.textContent = score;
+}
+
+function updateLevelScore() {
+    document.getElementById("levelScore").textContent = levelScore;
+}
+
+function addScore(points) {
+    score += points;
+    levelScore += points;
+
+    updateScore();
+    updateLevelScore();
 }
 
 function showMessage(text) {

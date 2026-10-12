@@ -280,8 +280,8 @@ body {
 .cell {
     width: 54px;
     height: 54px;
-    background-color: #fabbda;
-    border: 1px solid #ee82bb;
+    background-color: #f3b5d3;
+    border: 1px solid #87094c;
     display: flex;
     justify-content: center;
     align-items: center;
