@@ -815,10 +815,16 @@ function clickCell(event) {
 }
 
 function clickLevel5Cell(row, col) {
+    if (memoryVisible) {
+        showMessage("Hãy ghi nhớ vị trí các hình!");
+        return;
+    }
+
     if (board[row][col] === -1) {
         return;
     }
-       let selectedIndex = memorySelected.findIndex(function (position) {
+
+    let selectedIndex = memorySelected.findIndex(function (position) {
         return position.row === row && position.col === col;
     });
 
@@ -828,38 +834,35 @@ function clickLevel5Cell(row, col) {
         return;
     }
 
-    memorySelected.push({
-        row: row,
-        col: col
-    });
-
+    memorySelected.push({ row: row, col: col });
     renderBoard();
     let cells = document.querySelectorAll(".cell");
+
     if (memorySelected.length < 2) {
         showMessage("Hãy chọn thêm một hình");
         return;
     }
-
     let first = memorySelected[0];
     let second = memorySelected[1];
 
-    if ( board[first.row][first.col] !== board[second.row][second.col] ) {
-        let cells = document.querySelectorAll(".cell");
+    if (board[first.row][first.col] !== board[second.row][second.col]) {
         cells.forEach(function (cell) {
-            let row = Number(cell.dataset.row);
-            let col = Number(cell.dataset.col);
-            if ( (row === first.row && col === first.col) || (row === second.row && col === second.col) ) {
-                cell.classList.remove("selected");
+            let cellRow = Number(cell.dataset.row);
+            let cellCol = Number(cell.dataset.col);
+
+            if ((cellRow === first.row && cellCol === first.col) ||
+                (cellRow === second.row && cellCol === second.col)) {
                 cell.classList.add("pair-wrong");
             }
         });
 
-        playSound(wrongSound);
-        showMessage("Sai cặp");
+        handleWrongSelection("Sai cặp");
+
         setTimeout(function () {
-            cells.forEach(function (cell) {
+            document.querySelectorAll(".cell").forEach(function (cell) {
                 cell.classList.remove("pair-wrong");
             });
+
             memorySelected = [];
             renderBoard();
         }, 700);
@@ -869,30 +872,34 @@ function clickLevel5Cell(row, col) {
     let path = findPath(first, second);
     if (path === null) {
         cells.forEach(function (cell) {
-            let row = Number(cell.dataset.row);
-            let col = Number(cell.dataset.col);
+            let cellRow = Number(cell.dataset.row);
+            let cellCol = Number(cell.dataset.col);
 
-            if ( (row === first.row && col === first.col) || (row === second.row && col === second.col) ) {
-                cell.classList.remove("selected");
+            if ((cellRow === first.row && cellCol === first.col) ||
+                (cellRow === second.row && cellCol === second.col)) {
                 cell.classList.add("pair-wrong");
             }
         });
 
-        playSound(wrongSound);
-        showMessage( "Hai hình giống nhau nhưng không thể nối" );
+        handleWrongSelection("Hai hình giống nhau nhưng không thể nối");
+
         setTimeout(function () {
-            cells.forEach(function (cell) {
+            document.querySelectorAll(".cell").forEach(function (cell) {
                 cell.classList.remove("pair-wrong");
             });
+
             memorySelected = [];
             renderBoard();
         }, 700);
         return;
     }
+
     cells.forEach(function (cell) {
-        let row = Number(cell.dataset.row);
-        let col = Number(cell.dataset.col);
-        if ( (row === first.row && col === first.col) || (row === second.row && col === second.col) ) {
+        let cellRow = Number(cell.dataset.row);
+        let cellCol = Number(cell.dataset.col);
+
+        if ((cellRow === first.row && cellCol === first.col) ||
+            (cellRow === second.row && cellCol === second.col)) {
             cell.classList.remove("selected");
             cell.classList.add("pair-correct");
         }
@@ -901,21 +908,28 @@ function clickLevel5Cell(row, col) {
     drawPath(path);
     setTimeout(function () {
         clearPath();
-        cells.forEach(function (cell) {
+        document.querySelectorAll(".cell").forEach(function (cell) {
             cell.classList.remove("pair-correct");
         });
+
         board[first.row][first.col] = -1;
         board[second.row][second.col] = -1;
+
         hiddenCells = hiddenCells.filter(function (position) {
-            return !( (position.row === first.row && position.col === first.col) || (position.row === second.row && position.col === second.col));
+            return !( (position.row === first.row && position.col === first.col) ||
+                (position.row === second.row && position.col === second.col)
+            );
         });
+
         memorySelected = [];
         addScore(10);
         renderBoard();
+
         if (checkWin()) {
             winLevel();
             return;
         }
+
         showMessage("Đúng cặp");
     }, 500);
 }
