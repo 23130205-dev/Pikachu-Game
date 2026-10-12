@@ -381,7 +381,7 @@ function hideLevel5Cells() {
 
     shuffle(positions);
 
-    for (let i = 0; i < Math.min(4, positions.length); i++) {
+    for (let i = 0; i < Math.min(12, positions.length); i++) {
         hiddenCells.push(positions[i]);
     }
     memoryVisible = false;
