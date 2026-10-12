@@ -1298,7 +1298,7 @@ function findLevel4Center() {
             nightCenterRow = oldRow;
             nightCenterCol = oldCol;
             if (hasMove) {
-            enters.push({ row: row, col: col });
+            centers.push({ row: row, col: col });
             }
         }
     }
