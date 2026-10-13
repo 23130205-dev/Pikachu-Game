@@ -487,7 +487,8 @@ function removePair(first, second) {
             nightTimeCount = 0;
             showMessage("Không còn nước đi - đang chuyển vùng sáng");
             setTimeout(function () {
-                if (!gameEnded && level === 4 && findNightCenter()) {
+                if (gameEnded || level !== 4) return;
+                if (refreshLevel4View(true)) {
                     renderBoard();
                     showMessage("Bóng tối đã thay đổi vị trí nhìn");
                 }
@@ -832,6 +833,22 @@ function findNightCenter(keepCurrentOk) {
     return true;
 }
 
+function recoverLevel4Move() {
+    let tries = 0;
+    while (tries < 50) {
+        shuffleBoardData();
+        if (findNightCenter(true)) return true;
+        tries++;
+    }
+    return false;
+}
+
+function refreshLevel4View(preferOtherCenter) {
+    if (preferOtherCenter && findNightCenter()) return true;
+    if (findNightCenter(true)) return true;
+    return recoverLevel4Move();
+}
+
 function setupLevel4() {
     let tries = 0;
     do {
@@ -841,6 +858,7 @@ function setupLevel4() {
         tries++;
         if (findNightCenter(true)) return;
     } while (tries < 80);
+    recoverLevel4Move();
 }
 
 function setupLevel5() {
@@ -1033,7 +1051,7 @@ function startTimer() {
                 nightTimeCount = 0;
                 removeSelected();
                 clearPath();
-                if (findNightCenter()) {
+                if (refreshLevel4View(true)) {
                     renderBoard();
                     showMessage("Bóng tối đã thay đổi vị trí nhìn");
                 }
