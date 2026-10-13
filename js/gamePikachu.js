@@ -45,6 +45,7 @@ let memoryVisible = true;
 let hiddenCells = [];
 let memorySelected = [];
 let memoryHideTimer = null;
+let memoryBusy = false;
 
 const boardElement = document.getElementById("board");
 const scoreElement = document.getElementById("score");
@@ -809,11 +810,11 @@ function transformLevel3Board() {
     showMessage("Sau 2 cặp, một số hình trên bàn đã tự động biến đổi");
 }
 
-function findNightCenter() {
+function findNightCenter(keepCurrentOk) {
     let centers = [];
     for (let row = 1; row < ROWS - 1; row++) {
         for (let col = 1; col < COLUMNS - 1; col++) {
-            if (row === nightCenterRow && col === nightCenterCol) continue;
+            if (!keepCurrentOk && row === nightCenterRow && col === nightCenterCol) continue;
             let oldRow = nightCenterRow;
             let oldCol = nightCenterCol;
             nightCenterRow = row;
@@ -832,14 +833,21 @@ function findNightCenter() {
 }
 
 function setupLevel4() {
-    createBoard();
-    findNightCenter();
+    let tries = 0;
+    do {
+        createBoard();
+        nightCenterRow = 3;
+        nightCenterCol = 6;
+        tries++;
+        if (findNightCenter(true)) return;
+    } while (tries < 80);
 }
 
 function setupLevel5() {
     createBoard();
     hiddenCells = [];
     memorySelected = [];
+    memoryBusy = false;
     memoryVisible = true;
     clearTimeout(memoryHideTimer);
     renderBoard();
@@ -850,7 +858,11 @@ function setupLevel5() {
 }
 
 function hideMemoryCells() {
-    if (gameEnded || paused || level !== 5) return;
+    if (gameEnded || level !== 5) return;
+    if (paused) {
+        memoryHideTimer = setTimeout(hideMemoryCells, 500);
+        return;
+    }
 
     hiddenCells = [];
     let positions = [];
@@ -865,6 +877,7 @@ function hideMemoryCells() {
     }
     memoryVisible = false;
     memorySelected = [];
+    memoryBusy = false;
     renderBoard();
     showMessage("Hãy nhớ vị trí các hình đã bị che");
 }
@@ -874,6 +887,7 @@ function clickMemoryCell(row, col) {
         showMessage("Hãy ghi nhớ vị trí các hình!");
         return;
     }
+    if (memoryBusy) return;
     if (board[row][col] === -1) return;
 
     let selectedIndex = -1;
@@ -898,6 +912,7 @@ function clickMemoryCell(row, col) {
         return;
     }
 
+    memoryBusy = true;
     let first = memorySelected[0];
     let second = memorySelected[1];
 
@@ -907,6 +922,7 @@ function clickMemoryCell(row, col) {
         setTimeout(function () {
             clearPairMark("pair-wrong");
             memorySelected = [];
+            memoryBusy = false;
             renderBoard();
         }, 700);
         return;
@@ -919,6 +935,7 @@ function clickMemoryCell(row, col) {
         setTimeout(function () {
             clearPairMark("pair-wrong");
             memorySelected = [];
+            memoryBusy = false;
             renderBoard();
         }, 700);
         return;
@@ -936,6 +953,7 @@ function clickMemoryCell(row, col) {
             return !sameCell(pos, first) && !sameCell(pos, second);
         });
         memorySelected = [];
+        memoryBusy = false;
         addScore(10);
         renderBoard();
         if (checkWin()) {
@@ -1076,7 +1094,7 @@ function updateSoundButton() {
 }
 
 function applyLevelRules() {
-    lives = 6 - (level - 1);
+    lives = 5 - (level - 1);
     if (lives < 1) lives = 1;
     hintCount = Math.max(0, 3 - (level - 1));
     if (level === 5) shuffleCount = 0;
@@ -1103,6 +1121,7 @@ function resetRoundFlags() {
     nightTimeCount = 0;
     hiddenCells = [];
     memorySelected = [];
+    memoryBusy = false;
     clearTimeout(memoryHideTimer);
 }
 
@@ -1192,7 +1211,8 @@ function winLevel() {
         loadLevelBoard();
         if (level !== 5) renderBoard();
         startTimer();
-        showMessage("Level " + level + ": Hãy chọn 2 hình giống nhau");
+        if (level === 5) showMessage("Hãy ghi nhớ vị trí các hình!");
+        else showMessage("Level " + level + ": Hãy chọn 2 hình giống nhau");
     }, 1500);
 }
 
