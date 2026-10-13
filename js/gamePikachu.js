@@ -362,18 +362,10 @@ function renderBoard() {
 
             if ((level === 2 || level === 3) && isObstacle(row, col)) {
                 cell.classList.add("obstacle");
-                let icon = document.createElement("i");
-                icon.className = "fa-solid fa-lock";
-                cell.appendChild(icon);
             } else if (level === 3 && getSkill(row, col)) {
                 let skill = getSkill(row, col);
                 cell.classList.add("skill-cell");
-                let icon = document.createElement("i");
-                if (skill.type === "teleport") icon.className = "fa-solid fa-arrows-up-down-left-right";
-                if (skill.type === "destroy") icon.className = "fa-solid fa-hammer";
-                if (skill.type === "double") icon.className = "fa-solid fa-star";
-                if (skill.type === "freeze") icon.className = "fa-solid fa-snowflake";
-                cell.appendChild(icon);
+                cell.classList.add("skill-" + skill.type);
             } else if (board[row][col] !== -1 && nightVisible && showImage) {
                 let image = document.createElement("img");
                 image.src = images[board[row][col]];
@@ -1058,27 +1050,27 @@ function updateShuffleButton() {
 }
 
 function updatePauseButton() {
-    let icon = pauseButton.querySelector("i");
-    let text = pauseButton.querySelector("span");
+    let icon = document.getElementById("pauseIcon");
+    let text = document.getElementById("pauseText");
     if (!icon || !text) return;
     if (paused) {
-        icon.className = "fa-solid fa-play";
+        icon.textContent = "▶";
         text.textContent = "Tiếp tục";
     } else {
-        icon.className = "fa-solid fa-pause";
+        icon.textContent = "❚❚";
         text.textContent = "Tạm dừng";
     }
 }
 
 function updateSoundButton() {
-    let icon = soundButton.querySelector("i");
-    let text = soundButton.querySelector("span");
+    let icon = document.getElementById("soundIcon");
+    let text = document.getElementById("soundText");
     if (!icon || !text) return;
     if (sound) {
-        icon.className = "fa-solid fa-volume-high";
+        icon.textContent = "♪";
         text.textContent = "Âm thanh";
     } else {
-        icon.className = "fa-solid fa-volume-xmark";
+        icon.textContent = "✕";
         text.textContent = "Tắt âm thanh";
     }
 }

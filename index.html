@@ -5,59 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pikachu Game</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="fontawesome/css/fontawesome.css">
-    <link rel="stylesheet" href="fontawesome/css/solid.css">
-    <link rel="stylesheet" href="fontawesome/css/regular.css">
 </head>
 <body>
 <div class="game-container">
     <div class="top-container">
-        <div class="score">Điểm: <span id="score">0</span>
-        </div>
-        <div class="level-score">Điểm level hiện tại: <span id="levelScore">0</span>
-        </div>
+        <div class="score">Điểm: <span id="score">0</span></div>
+        <div class="level-score">Điểm level hiện tại: <span id="levelScore">0</span></div>
         <div class="lives" id="lives">Mạng:
-            <i class="fa-solid fa-heart heart-icon"></i>
-            <i class="fa-solid fa-heart heart-icon"></i>
-            <i class="fa-solid fa-heart heart-icon"></i>
-            <i class="fa-solid fa-heart heart-icon"></i>
-            <i class="fa-solid fa-heart heart-icon"></i>
+            <span class="heart-icon"></span>
+            <span class="heart-icon"></span>
+            <span class="heart-icon"></span>
+            <span class="heart-icon"></span>
+            <span class="heart-icon"></span>
         </div>
-        <div class="level">Level: <span id="level">1</span>/6
-        </div>
-
-        <div class="time">Thời gian: <span id="time">80</span>
-        </div>
+        <div class="level">Level: <span id="level">1</span>/6</div>
+        <div class="time">Thời gian: <span id="time">80</span></div>
     </div>
 
     <div class="main-container">
         <div class="menu">
             <button id="newButton" class="game-button">
-                <i class="fa-solid fa-rotate-left"></i><span>Chơi lại</span>
+                <span class="btn-icon">↻</span><span>Chơi lại</span>
             </button>
 
             <button id="levelButton" class="game-button">
-                <i class="fa-solid fa-layer-group"></i><span>Chọn Level</span>
+                <span class="btn-icon">☰</span><span>Chọn Level</span>
             </button>
 
             <button id="hintButton" class="game-button hint-button">
-                <i class="fa-regular fa-lightbulb"></i><span>Gợi ý</span><span class="hint-count">3</span>
+                <span class="btn-icon">?</span><span>Gợi ý</span><span class="hint-count">3</span>
             </button>
 
             <button id="shuffleButton" class="game-button">
-                <i class="fa-solid fa-shuffle"></i><span>Đổi vị trí</span><span class="shuffle-count">3</span>
+                <span class="btn-icon">⇄</span><span>Đổi vị trí</span><span class="shuffle-count">3</span>
             </button>
 
             <button id="pauseButton" class="game-button">
-                <i class="fa-solid fa-pause"></i><span>Tạm dừng</span>
+                <span class="btn-icon" id="pauseIcon">❚❚</span><span id="pauseText">Tạm dừng</span>
             </button>
 
             <button id="soundButton" class="game-button">
-                <i class="fa-solid fa-volume-high"></i><span>Âm thanh</span>
+                <span class="btn-icon" id="soundIcon">♪</span><span id="soundText">Âm thanh</span>
             </button>
 
             <button id="exitButton" class="game-button">
-                <i class="fa-solid fa-right-from-bracket"></i><span>Thoát</span>
+                <span class="btn-icon">✕</span><span>Thoát</span>
             </button>
         </div>
 
@@ -65,44 +57,32 @@
             <div class="time-bar">
                 <div id="timeProgress" class="time-progress"></div>
             </div>
-
             <div id="board" class="board"></div>
-
             <svg id="path" class="path"></svg>
         </div>
     </div>
 
     <div id="message" class="message"></div>
 </div>
+
 <audio id="clickSound" src="sounds/click.mp3"></audio>
 <audio id="correctSound" src="sounds/correct.mp3"></audio>
 <audio id="wrongSound" src="sounds/incorrect.mp3"></audio>
 <audio id="levelUpSound" src="sounds/level-up.mp3"></audio>
 <audio id="shuffleSound" src="sounds/shuffle.mp3"></audio>
+
 <div id="levelModal" class="level-modal">
     <div class="level-box">
         <h2>CHỌN LEVEL</h2>
         <div class="level-list">
-            <button class="level-select-button" data-level="1">Level 1
-            </button>
-
-            <button class="level-select-button" data-level="2">Level 2
-            </button>
-
-            <button class="level-select-button" data-level="3">Level 3
-            </button>
-
-            <button class="level-select-button" data-level="4">Level 4
-            </button>
-
-            <button class="level-select-button" data-level="5">Level 5
-            </button>
-
-            <button class="level-select-button" data-level="6">Level 6
-            </button>
+            <button class="level-select-button" data-level="1">Level 1</button>
+            <button class="level-select-button" data-level="2">Level 2</button>
+            <button class="level-select-button" data-level="3">Level 3</button>
+            <button class="level-select-button" data-level="4">Level 4</button>
+            <button class="level-select-button" data-level="5">Level 5</button>
+            <button class="level-select-button" data-level="6">Level 6</button>
         </div>
-        <button id="closeLevelButton" class="close-level-button">Hủy
-        </button>
+        <button id="closeLevelButton" class="close-level-button">Hủy</button>
     </div>
 </div>
 
