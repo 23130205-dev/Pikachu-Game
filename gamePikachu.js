@@ -47,6 +47,14 @@ let memorySelected = [];
 let memoryHideTimer = null;
 let memoryBusy = false;
 
+let comboCount = 0;
+let comboTimer = null;
+let comboTimeout = 4000;
+let lastMatchTime = 0;
+let boardShuffleTimer = null;
+let level6NoMoveCheckTimer = null;
+let level6LastNoMoveCheck = 0;
+
 const boardElement = document.getElementById("board");
 const scoreElement = document.getElementById("score");
 const levelElement = document.getElementById("level");
@@ -197,6 +205,7 @@ function canGo(row, col, start, end) {
     if (row === -1 || row === ROWS || col === -1 || col === COLUMNS) return true;
     if ((row === start.row && col === start.col) || (row === end.row && col === end.col)) return true;
     if ((level === 2 || level === 3) && isObstacle(row, col)) return false;
+    if (level === 3 && getSkill(row, col)) return false;
     return board[row][col] === -1;
 }
 
@@ -467,6 +476,25 @@ function removePair(first, second) {
         addScore(10);
     }
 
+    if (level === 6) {
+        let now = Date.now();
+        if (lastMatchTime > 0 && now - lastMatchTime <= comboTimeout) {
+            comboCount++;
+            let bonus = comboCount * 5;
+            addScore(bonus);
+            showMessage("COMBO x" + (comboCount + 1) + " +" + bonus + " điểm!");
+        } else {
+            comboCount = 0;
+        }
+        lastMatchTime = now;
+        clearTimeout(comboTimer);
+        comboTimer = setTimeout(function () {
+            if (level === 6 && !gameEnded) {
+                comboCount = 0;
+            }
+        }, comboTimeout);
+    }
+
     selected = null;
     clearPath();
 
@@ -491,6 +519,12 @@ function removePair(first, second) {
                 if (refreshLevel4View(true)) {
                     renderBoard();
                     showMessage("Bóng tối đã thay đổi vị trí nhìn");
+                } else {
+                    shuffleBoardData();
+                    ensureHasMove();
+                    findNightCenter(true);
+                    renderBoard();
+                    showMessage("Bàn chơi đã được xáo lại");
                 }
             }, 300);
         } else {
@@ -846,7 +880,14 @@ function recoverLevel4Move() {
 function refreshLevel4View(preferOtherCenter) {
     if (preferOtherCenter && findNightCenter()) return true;
     if (findNightCenter(true)) return true;
-    return recoverLevel4Move();
+    if (recoverLevel4Move()) return true;
+    let tries = 0;
+    while (tries < 30) {
+        shuffleBoardData();
+        if (findNightCenter(true)) return true;
+        tries++;
+    }
+    return false;
 }
 
 function setupLevel4() {
@@ -873,6 +914,28 @@ function setupLevel5() {
     memoryHideTimer = setTimeout(function () {
         hideMemoryCells();
     }, 3000);
+}
+
+function setupLevel6() {
+    comboCount = 0;
+    lastMatchTime = 0;
+    clearTimeout(comboTimer);
+    clearTimeout(boardShuffleTimer);
+    clearTimeout(level6NoMoveCheckTimer);
+
+    createBoard();
+    renderBoard();
+    showMessage("Level 6 - Ghép nhanh để COMBO!");
+
+    level6NoMoveCheckTimer = setInterval(function () {
+        if (gameEnded || paused || level !== 6) return;
+        if (!hasMove()) {
+            shuffleBoardData();
+            ensureHasMove();
+            renderBoard();
+            showMessage("Bàn chơi đã tự xáo lại");
+        }
+    }, 2000);
 }
 
 function hideMemoryCells() {
@@ -907,6 +970,18 @@ function clickMemoryCell(row, col) {
     }
     if (memoryBusy) return;
     if (board[row][col] === -1) return;
+
+    let isHidden = false;
+    for (let i = 0; i < hiddenCells.length; i++) {
+        if (sameCell(hiddenCells[i], {row: row, col: col})) {
+            isHidden = true;
+            break;
+        }
+    }
+    if (!isHidden) {
+        showMessage("Chỉ được chọn các ô đã bị che");
+        return;
+    }
 
     let selectedIndex = -1;
     for (let i = 0; i < memorySelected.length; i++) {
@@ -1003,6 +1078,7 @@ function updateLevel() {
 
 function updateLive() {
     let maxLives = 5 - (level - 1);
+    if (maxLives < 1) maxLives = 1;
     let hearts = document.querySelectorAll("#lives .heart-icon");
     for (let i = 0; i < hearts.length; i++) {
         if (i < maxLives) {
@@ -1054,6 +1130,12 @@ function startTimer() {
                 if (refreshLevel4View(true)) {
                     renderBoard();
                     showMessage("Bóng tối đã thay đổi vị trí nhìn");
+                } else {
+                    shuffleBoardData();
+                    ensureHasMove();
+                    findNightCenter(true);
+                    renderBoard();
+                    showMessage("Bàn chơi đã được xáo lại");
                 }
             }
         }
@@ -1148,6 +1230,7 @@ function loadLevelBoard() {
     else if (level === 3) setupLevel3();
     else if (level === 4) setupLevel4();
     else if (level === 5) setupLevel5();
+    else if (level === 6) setupLevel6();
     else createBoard();
 }
 
@@ -1165,12 +1248,16 @@ function refreshHud() {
 
 function startGame() {
     clearInterval(timer);
+    clearTimeout(comboTimer);
+    clearTimeout(boardShuffleTimer);
+    clearInterval(level6NoMoveCheckTimer);
     score = 0;
     levelScore = 0;
     level = 1;
     lives = 5;
     hintCount = 3;
     shuffleCount = 3;
+    comboCount = 0;
     resetRoundFlags();
     updateScore();
     updateLevelScore();
@@ -1187,7 +1274,11 @@ function startGame() {
 
 function startLevel(selectedLevel) {
     clearInterval(timer);
+    clearTimeout(comboTimer);
+    clearTimeout(boardShuffleTimer);
+    clearInterval(level6NoMoveCheckTimer);
     level = selectedLevel;
+    comboCount = 0;
     resetRoundFlags();
     applyLevelRules();
     refreshHud();
@@ -1201,6 +1292,9 @@ function startLevel(selectedLevel) {
 function winLevel() {
     clearInterval(timer);
     clearTimeout(memoryHideTimer);
+    clearTimeout(comboTimer);
+    clearTimeout(boardShuffleTimer);
+    clearInterval(level6NoMoveCheckTimer);
     gameEnded = true;
     addScore(50);
     playSound(levelUpSound);
@@ -1362,6 +1456,9 @@ soundButton.addEventListener("click", function () {
 exitButton.addEventListener("click", function () {
     clearInterval(timer);
     clearTimeout(memoryHideTimer);
+    clearTimeout(comboTimer);
+    clearTimeout(boardShuffleTimer);
+    clearInterval(level6NoMoveCheckTimer);
     gameEnded = true;
     paused = false;
     selected = null;
