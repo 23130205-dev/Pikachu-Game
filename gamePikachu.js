@@ -522,7 +522,11 @@ function removePair(first, second) {
                 } else {
                     shuffleBoardData();
                     ensureHasMove();
-                    findNightCenter(true);
+                    let placed = false;
+                    for (let i = 0; i < 50 && !placed; i++) {
+                        if (findNightCenter(true) && hasNonEmptyInNightZone()) placed = true;
+                    }
+                    if (!placed) findNightCenter(true);
                     renderBoard();
                     showMessage("Bàn chơi đã được xáo lại");
                 }
@@ -871,7 +875,7 @@ function recoverLevel4Move() {
     let tries = 0;
     while (tries < 50) {
         shuffleBoardData();
-        if (findNightCenter(true)) return true;
+        if (findNightCenter(true) && hasNonEmptyInNightZone()) return true;
         tries++;
     }
     return false;
@@ -879,13 +883,25 @@ function recoverLevel4Move() {
 
 function refreshLevel4View(preferOtherCenter) {
     if (preferOtherCenter && findNightCenter()) return true;
-    if (findNightCenter(true)) return true;
+    if (findNightCenter(true)) {
+        if (hasNonEmptyInNightZone()) return true;
+    }
     if (recoverLevel4Move()) return true;
     let tries = 0;
     while (tries < 30) {
         shuffleBoardData();
-        if (findNightCenter(true)) return true;
+        if (findNightCenter(true) && hasNonEmptyInNightZone()) return true;
         tries++;
+    }
+    return false;
+}
+
+function hasNonEmptyInNightZone() {
+    for (let r = nightCenterRow - nightRadius; r <= nightCenterRow + nightRadius; r++) {
+        for (let c = nightCenterCol - nightRadius; c <= nightCenterCol + nightRadius; c++) {
+            if (r < 0 || r >= ROWS || c < 0 || c >= COLUMNS) continue;
+            if (board[r][c] >= 0) return true;
+        }
     }
     return false;
 }
@@ -1133,7 +1149,11 @@ function startTimer() {
                 } else {
                     shuffleBoardData();
                     ensureHasMove();
-                    findNightCenter(true);
+                    let placed = false;
+                    for (let i = 0; i < 50 && !placed; i++) {
+                        if (findNightCenter(true) && hasNonEmptyInNightZone()) placed = true;
+                    }
+                    if (!placed) findNightCenter(true);
                     renderBoard();
                     showMessage("Bàn chơi đã được xáo lại");
                 }
