@@ -43,9 +43,24 @@ let nightRadius = 3;
 let nightTimeCount = 0;
 let memoryVisible = true;
 let hiddenCells = [];
-let memorySelected = [];
+let level5Selected = [];
+let level5HiddenReveal = {};
 let memoryHideTimer = null;
-let memoryBusy = false;
+let level5Processing = false;
+let memoryRevealCount = {};
+let memoryRevealTimers = {};
+const MEMORY_MAX_REVEALS_PER_CELL = 3;
+const MEMORY_INITIAL_REVEAL_MIN_MS = 2200;
+const MEMORY_INITIAL_REVEAL_MAX_MS = 6500;
+const MEMORY_REVEAL_DURATION_MIN_MS = 1500;
+const MEMORY_REVEAL_DURATION_MAX_MS = 4500;
+
+function clearAllMemoryRevealTimers() {
+    for (let key in memoryRevealTimers) {
+        if (memoryRevealTimers.hasOwnProperty(key)) clearTimeout(memoryRevealTimers[key]);
+    }
+    memoryRevealTimers = {};
+}
 
 let comboCount = 0;
 let comboTimer = null;
@@ -351,21 +366,23 @@ function renderBoard() {
             let showImage = true;
             if (level === 5 && !memoryVisible) {
                 let hidden = false;
-                let picked = false;
                 for (let i = 0; i < hiddenCells.length; i++) {
                     if (sameCell(hiddenCells[i], {row: row, col: col})) hidden = true;
                 }
-                for (let i = 0; i < memorySelected.length; i++) {
-                    if (sameCell(memorySelected[i], {row: row, col: col})) picked = true;
+                let key = memoryCellKey(row, col);
+                let revealed = level5HiddenReveal.hasOwnProperty(key);
+                let selected = false;
+                for (let i = 0; i < level5Selected.length; i++) {
+                    if (sameCell(level5Selected[i], {row: row, col: col})) selected = true;
                 }
-                if (hidden && !picked) {
+                if (hidden && !selected && !revealed) {
                     showImage = false;
                     cell.classList.add("memory-hidden");
                 }
             }
 
-            for (let i = 0; i < memorySelected.length; i++) {
-                if (sameCell(memorySelected[i], {row: row, col: col})) {
+            for (let i = 0; i < level5Selected.length; i++) {
+                if (sameCell(level5Selected[i], {row: row, col: col})) {
                     cell.classList.add("selected");
                 }
             }
@@ -921,15 +938,23 @@ function setupLevel4() {
 function setupLevel5() {
     createBoard();
     hiddenCells = [];
-    memorySelected = [];
-    memoryBusy = false;
+    level5Selected = [];
+    level5Processing = false;
     memoryVisible = true;
+    memoryRevealCount = {};
+    level5HiddenReveal = {};
+    clearAllMemoryRevealTimers();
     clearTimeout(memoryHideTimer);
     renderBoard();
     showMessage("Hãy ghi nhớ vị trí các hình!");
+
+    let duration = Math.round(
+        MEMORY_INITIAL_REVEAL_MIN_MS +
+        Math.random() * (MEMORY_INITIAL_REVEAL_MAX_MS - MEMORY_INITIAL_REVEAL_MIN_MS)
+    );
     memoryHideTimer = setTimeout(function () {
         hideMemoryCells();
-    }, 3000);
+    }, duration);
 }
 
 function setupLevel6() {
@@ -973,10 +998,50 @@ function hideMemoryCells() {
         hiddenCells.push(positions[i]);
     }
     memoryVisible = false;
-    memorySelected = [];
-    memoryBusy = false;
+    level5Selected = [];
+    level5Processing = false;
+    memoryRevealCount = {};
+    level5HiddenReveal = {};
+    clearAllMemoryRevealTimers();
     renderBoard();
     showMessage("Hãy nhớ vị trí các hình đã bị che");
+}
+
+function memoryCellKey(row, col) {
+    return row + "_" + col;
+}
+
+function scheduleMemoryRehide(row, col) {
+    let key = memoryCellKey(row, col);
+    clearTimeout(memoryRevealTimers[key]);
+    let duration = Math.round(
+        MEMORY_REVEAL_DURATION_MIN_MS +
+        Math.random() * (MEMORY_REVEAL_DURATION_MAX_MS - MEMORY_REVEAL_DURATION_MIN_MS)
+    );
+    memoryRevealTimers[key] = setTimeout(function () {
+        if (level !== 5 || gameEnded) return;
+        let stillSelected = false;
+        for (let i = 0; i < level5Selected.length; i++) {
+            let sel = level5Selected[i];
+            if (sel.row === row && sel.col === col) {
+                stillSelected = true;
+                break;
+            }
+        }
+        if (stillSelected) return;
+        let stillHidden = false;
+        for (let i = 0; i < hiddenCells.length; i++) {
+            let h = hiddenCells[i];
+            if (h.row === row && h.col === col) {
+                stillHidden = true;
+                break;
+            }
+        }
+        if (!stillHidden) return;
+        delete memoryRevealTimers[key];
+        delete level5HiddenReveal[key];
+        renderBoard();
+    }, duration);
 }
 
 function clickMemoryCell(row, col) {
@@ -984,54 +1049,69 @@ function clickMemoryCell(row, col) {
         showMessage("Hãy ghi nhớ vị trí các hình!");
         return;
     }
-    if (memoryBusy) return;
+    if (level5Processing) return;
     if (board[row][col] === -1) return;
 
-    let isHidden = false;
-    for (let i = 0; i < hiddenCells.length; i++) {
-        if (sameCell(hiddenCells[i], {row: row, col: col})) {
-            isHidden = true;
+    let key = memoryCellKey(row, col);
+
+    let existingIndex = -1;
+    for (let i = 0; i < level5Selected.length; i++) {
+        if (sameCell(level5Selected[i], {row: row, col: col})) {
+            existingIndex = i;
             break;
         }
     }
-    if (!isHidden) {
-        showMessage("Chỉ được chọn các ô đã bị che");
-        return;
-    }
-
-    let selectedIndex = -1;
-    for (let i = 0; i < memorySelected.length; i++) {
-        if (sameCell(memorySelected[i], {row: row, col: col})) {
-            selectedIndex = i;
-            break;
-        }
-    }
-
-    if (selectedIndex !== -1) {
-        memorySelected.splice(selectedIndex, 1);
+    if (existingIndex !== -1) {
+        level5Selected.splice(existingIndex, 1);
+        showMessage("Đã bỏ chọn ô");
         renderBoard();
         return;
     }
 
-    memorySelected.push({row: row, col: col});
-    renderBoard();
+    let isHidden = isHiddenCell(row, col);
+    let isRevealed = level5HiddenReveal.hasOwnProperty(key);
 
-    if (memorySelected.length < 2) {
-        showMessage("Hãy chọn thêm một hình");
+    if (isHidden && isRevealed) {
+        if (memoryRevealCount[key] > 0) memoryRevealCount[key]--;
+        clearTimeout(memoryRevealTimers[key]);
+        delete memoryRevealTimers[key];
+        delete level5HiddenReveal[key];
+        showMessage("Đã đóng ô ẩn - hoàn lại 1 lượt mở");
+        renderBoard();
         return;
     }
 
-    memoryBusy = true;
-    let first = memorySelected[0];
-    let second = memorySelected[1];
+    if (isHidden) {
+        if (!memoryRevealCount[key]) memoryRevealCount[key] = 0;
+        if (memoryRevealCount[key] >= MEMORY_MAX_REVEALS_PER_CELL) {
+            showMessage("Ô ẩn này đã hết lượt mở - hãy dùng trí nhớ");
+            return;
+        }
+        memoryRevealCount[key]++;
+        level5HiddenReveal[key] = true;
+        scheduleMemoryRehide(row, col);
+        showMessage("Đã mở ô ẩn (" + memoryRevealCount[key] + "/" + MEMORY_MAX_REVEALS_PER_CELL + ") - click lại để chọn hoặc đóng");
+    }
+
+    level5Selected.push({row: row, col: col});
+    renderBoard();
+
+    if (level5Selected.length < 2) {
+        return;
+    }
+
+    level5Processing = true;
+    let first = level5Selected[0];
+    let second = level5Selected[1];
 
     if (board[first.row][first.col] !== board[second.row][second.col]) {
         markPair(first, second, "pair-wrong");
         handleWrongSelection("Sai cặp");
         setTimeout(function () {
             clearPairMark("pair-wrong");
-            memorySelected = [];
-            memoryBusy = false;
+            clearPendingMemoryReveals(first, second);
+            level5Selected = [];
+            level5Processing = false;
             renderBoard();
         }, 700);
         return;
@@ -1043,8 +1123,9 @@ function clickMemoryCell(row, col) {
         handleWrongSelection("Hai hình giống nhau nhưng không thể nối");
         setTimeout(function () {
             clearPairMark("pair-wrong");
-            memorySelected = [];
-            memoryBusy = false;
+            clearPendingMemoryReveals(first, second);
+            level5Selected = [];
+            level5Processing = false;
             renderBoard();
         }, 700);
         return;
@@ -1058,19 +1139,51 @@ function clickMemoryCell(row, col) {
         clearPairMark("pair-correct");
         board[first.row][first.col] = -1;
         board[second.row][second.col] = -1;
+
         hiddenCells = hiddenCells.filter(function (pos) {
             return !sameCell(pos, first) && !sameCell(pos, second);
         });
-        memorySelected = [];
-        memoryBusy = false;
+        finalizeMemoryReveal(first);
+        finalizeMemoryReveal(second);
+
+        level5Selected = [];
+        level5Processing = false;
         addScore(10);
         renderBoard();
+
         if (checkWin()) {
             winLevel();
             return;
         }
         showMessage("Đúng cặp");
     }, 500);
+}
+
+function isHiddenCell(row, col) {
+    for (let i = 0; i < hiddenCells.length; i++) {
+        if (sameCell(hiddenCells[i], {row: row, col: col})) return true;
+    }
+    return false;
+}
+
+function finalizeMemoryReveal(cell) {
+    let key = memoryCellKey(cell.row, cell.col);
+    clearTimeout(memoryRevealTimers[key]);
+    delete memoryRevealTimers[key];
+    delete level5HiddenReveal[key];
+}
+
+function clearPendingMemoryReveals(first, second) {
+    let cells = [first, second];
+    for (let i = 0; i < cells.length; i++) {
+        let cell = cells[i];
+        if (!isHiddenCell(cell.row, cell.col)) continue;
+        let key = memoryCellKey(cell.row, cell.col);
+        if (memoryRevealCount[key] > 0) memoryRevealCount[key]--;
+        clearTimeout(memoryRevealTimers[key]);
+        delete memoryRevealTimers[key];
+        delete level5HiddenReveal[key];
+    }
 }
 
 function updateScore() {
@@ -1240,8 +1353,11 @@ function resetRoundFlags() {
     nightCenterCol = 6;
     nightTimeCount = 0;
     hiddenCells = [];
-    memorySelected = [];
-    memoryBusy = false;
+    level5Selected = [];
+    level5Processing = false;
+    memoryRevealCount = {};
+    level5HiddenReveal = {};
+    clearAllMemoryRevealTimers();
     clearTimeout(memoryHideTimer);
 }
 
@@ -1312,6 +1428,7 @@ function startLevel(selectedLevel) {
 function winLevel() {
     clearInterval(timer);
     clearTimeout(memoryHideTimer);
+    clearAllMemoryRevealTimers();
     clearTimeout(comboTimer);
     clearTimeout(boardShuffleTimer);
     clearInterval(level6NoMoveCheckTimer);
@@ -1476,6 +1593,7 @@ soundButton.addEventListener("click", function () {
 exitButton.addEventListener("click", function () {
     clearInterval(timer);
     clearTimeout(memoryHideTimer);
+    clearAllMemoryRevealTimers();
     clearTimeout(comboTimer);
     clearTimeout(boardShuffleTimer);
     clearInterval(level6NoMoveCheckTimer);
