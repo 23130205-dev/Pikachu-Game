@@ -253,13 +253,7 @@ function findPath(start, end) {
         { row: 0, col: 1 }
     ];
 
-    const queue = [{
-        row: start.row,
-        col: start.col,
-        dir: -1,
-        turns: 0,
-        path: [makeCell(start.row, start.col)]
-    }];
+    const queue = [{ row: start.row, col: start.col, dir: -1, turns: 0, path: [makeCell(start.row, start.col)] }];
     const visited = {};
 
     while (queue.length > 0) {
@@ -282,13 +276,7 @@ function findPath(start, end) {
             if (visited[key] !== undefined && visited[key] <= turns) continue;
             visited[key] = turns;
 
-            queue.push({
-                row: newRow,
-                col: newCol,
-                dir: dir,
-                turns: turns,
-                path: current.path.concat([makeCell(newRow, newCol)])
-            });
+            queue.push({ row: newRow, col: newCol, dir: dir, turns: turns, path: current.path.concat([makeCell(newRow, newCol)]) });
         }
     }
     return null;
@@ -519,7 +507,6 @@ function removePair(first, second) {
     } else {
         addScore(10);
     }
-
     selected = null;
     clearPath();
     refreshAfterMatch();
@@ -527,7 +514,6 @@ function removePair(first, second) {
 
 function refreshAfterMatch() {
     if (level === 6) updateIceStatus();
-
     if (checkWin()) {
         renderBoard();
         winLevel();
@@ -536,9 +522,7 @@ function refreshAfterMatch() {
     if (level === 3 && transformMoveCount % 2 === 0) {
         transformLevel3Board();
     }
-
     renderBoard();
-
     if (level === 6) showIceProgressMessage();
     if (level === 4) handleLevel4AfterMatch();
 }
@@ -552,7 +536,6 @@ function setupLevel2() {
 
 function placeLevel2Obstacles() {
     obstacles = pickSpreadPositions(6);
-
     const values = [];
     for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLUMNS; col++) {
@@ -587,7 +570,6 @@ function placeLevel2Obstacles() {
         tries++;
         if (countClosePairs() <= PAIRS_PER_CELL_LIMIT) break;
     } while (tries < SHUFFLE_TRIES);
-
     obstacles.forEach(function (obstacle) {
         board[obstacle.row][obstacle.col] = -1;
     });
@@ -615,7 +597,6 @@ function rotateLevel2Area() {
     const size = 4;
     const positions = [];
     const values = [];
-
     for (let row = startRow; row < startRow + size; row++) {
         for (let col = startCol; col < startCol + size; col++) {
             if (!isObstacle(row, col)) {
@@ -682,7 +663,6 @@ function placeLevel3Elements() {
     const special = pickSpreadPositions(12);
     obstacles = [];
     skillCells = [];
-
     for (let i = 0; i < 8; i++) {
         obstacles.push(makeCell(special[i].row, special[i].col));
     }
@@ -693,14 +673,12 @@ function placeLevel3Elements() {
             type: SKILL_TYPES[i]
         });
     }
-
     const pairCount = (ROWS * COLUMNS - obstacles.length - skillCells.length) / 2;
     const pairValues = [];
     for (let i = 0; i < pairCount; i++) {
         const imageIndex = i % images.length;
         pairValues.push(imageIndex, imageIndex);
     }
-
     let tries = 0;
     do {
         shuffle(pairValues);
@@ -708,7 +686,6 @@ function placeLevel3Elements() {
         tries++;
         if (countClosePairs() <= PAIRS_PER_CELL_LIMIT) break;
     } while (tries < SHUFFLE_TRIES);
-
     ensureHasMove();
 }
 
@@ -747,12 +724,10 @@ function skillValue(type) {
 
 function activateSkill(row, col) {
     if (paused || gameEnded) return;
-
     const skillIndex = skillCells.findIndex(function (cell) {
         return cell.row === row && cell.col === col;
     });
     if (skillIndex === -1) return;
-
     const skill = skillCells[skillIndex];
     skillCells.splice(skillIndex, 1);
     board[row][col] = -1;
@@ -1596,12 +1571,10 @@ function winLevel() {
     gameEnded = true;
     addScore(50);
     playSound(levelUpSound);
-
     if (level === MAX_LEVEL) {
         showMessage("Bạn đã hoàn thành tất cả các level");
         return;
     }
-
     showMessage("Hoàn thành Level " + level);
     setTimeout(advanceToNextLevel, 1500);
 }
@@ -1641,12 +1614,10 @@ function shuffleBoard() {
 
 function showHint() {
     if (paused || gameEnded) return false;
-
     for (let rowA = 0; rowA < ROWS; rowA++) {
         for (let colA = 0; colA < COLUMNS; colA++) {
             if (board[rowA][colA] < 0) continue;
             if (level === 4 && !inNightView(rowA, colA)) continue;
-
             for (let rowB = 0; rowB < ROWS; rowB++) {
                 for (let colB = 0; colB < COLUMNS; colB++) {
                     if (rowA === rowB && colA === colB) continue;
