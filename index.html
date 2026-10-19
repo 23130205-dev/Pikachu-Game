@@ -19,7 +19,7 @@
             <span class="heart-icon"></span>
         </div>
         <div class="level">Level: <span id="level">1</span>/6</div>
-        <div class="time">Thời gian: <span id="time">80</span></div>
+        <div class="time">Thời gian: <span id="time">300</span></div>
     </div>
 
     <div class="main-container">
@@ -27,27 +27,29 @@
             <button id="newButton" class="game-button">
                 <span class="btn-icon">↻</span><span>Chơi lại</span>
             </button>
-
             <button id="levelButton" class="game-button">
                 <span class="btn-icon">☰</span><span>Chọn Level</span>
             </button>
-
+            <button id="iceBreakButton" class="game-button ice-break-button">
+                <span class="btn-icon">❄</span><span>Tan băng</span>
+                <span class="ice-break-count" id="iceBreakCount">0</span>
+            </button>
             <button id="hintButton" class="game-button hint-button">
-                <span class="btn-icon">?</span><span>Gợi ý</span><span class="hint-count">3</span>
+                <span class="btn-icon">?</span><span>Gợi ý</span>
+                <span class="hint-count">3</span>
             </button>
-
             <button id="shuffleButton" class="game-button">
-                <span class="btn-icon">⇄</span><span>Đổi vị trí</span><span class="shuffle-count">3</span>
+                <span class="btn-icon">⇄</span><span>Đổi vị trí</span>
+                <span class="shuffle-count">3</span>
             </button>
-
             <button id="pauseButton" class="game-button">
-                <span class="btn-icon" id="pauseIcon">❚❚</span><span id="pauseText">Tạm dừng</span>
+                <span class="btn-icon" id="pauseIcon">❚❚</span>
+                <span id="pauseText">Tạm dừng</span>
             </button>
-
             <button id="soundButton" class="game-button">
-                <span class="btn-icon" id="soundIcon">♪</span><span id="soundText">Âm thanh</span>
+                <span class="btn-icon" id="soundIcon">♪</span>
+                <span id="soundText">Âm thanh</span>
             </button>
-
             <button id="exitButton" class="game-button">
                 <span class="btn-icon">✕</span><span>Thoát</span>
             </button>
@@ -57,6 +59,12 @@
             <div class="time-bar">
                 <div id="timeProgress" class="time-progress"></div>
             </div>
+            <div id="iceStatus" class="ice-status">
+                <span id="iceStatusText">Băng giá: 0/2</span>
+                <span class="ice-progress-bar">
+                        <span class="ice-progress-fill" id="iceProgressFill"></span>
+                    </span>
+            </div>
             <div id="board" class="board"></div>
             <svg id="path" class="path"></svg>
         </div>
@@ -65,7 +73,6 @@
     <div id="message" class="message"></div>
 </div>
 
-<audio id="clickSound" src="sounds/click.mp3"></audio>
 <audio id="correctSound" src="sounds/correct.mp3"></audio>
 <audio id="wrongSound" src="sounds/incorrect.mp3"></audio>
 <audio id="levelUpSound" src="sounds/level-up.mp3"></audio>
