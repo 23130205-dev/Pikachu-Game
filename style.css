@@ -450,10 +450,6 @@ body {
 }
 
 .ice-status {
-    position: absolute;
-    top: 14px;
-    left: 50%;
-    transform: translateX(-50%);
     padding: 6px 14px;
     background: rgb(6 152 227 / 0.9);
     color: #ffffff;
@@ -462,9 +458,8 @@ body {
     border-radius: 18px;
     border: 2px solid #e0f2fe;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
-    z-index: 8;
-    pointer-events: none;
     letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 
 .ice-status .ice-progress-bar {
