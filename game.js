@@ -7,33 +7,19 @@ const INITIAL_SHUFFLES = 3;
 const INITIAL_TIME = 300;
 const MIN_TIME = 60;
 const TIME_PER_LEVEL = 10;
-
 const PAIRS_PER_CELL_LIMIT = 10;
 const SHUFFLE_TRIES = 100;
-
-const images = [
-    "images/pikachu1.png",
-    "images/pikachu2.png",
-    "images/pikachu3.png",
-    "images/pikachu4.png",
-    "images/pikachu5.png",
-    "images/pikachu6.png",
-    "images/pikachu7.png",
-    "images/pikachu8.png",
-    "images/pikachu9.png",
-    "images/pikachu10.png",
-    "images/pikachu11.png",
-    "images/pikachu12.png"
-];
+const images = ["images/pikachu1.png", "images/pikachu2.png", "images/pikachu3.png",
+                "images/pikachu4.png", "images/pikachu5.png", "images/pikachu6.png",
+                "images/pikachu7.png", "images/pikachu8.png", "images/pikachu9.png",
+                "images/pikachu10.png", "images/pikachu11.png", "images/pikachu12.png"];
 
 const SKILL_TYPES = ["teleport", "destroy", "double", "freeze"];
-
 const MEMORY_REVEAL_INITIAL_MIN_MS = 2200;
 const MEMORY_REVEAL_INITIAL_MAX_MS = 6500;
 const MEMORY_REVEAL_DURATION_MIN_MS = 1500;
 const MEMORY_REVEAL_DURATION_MAX_MS = 4500;
 const MEMORY_MAX_REVEALS_PER_CELL = 3;
-
 const ICE_NEEDED_PAIRS = 2;
 const ICE_COVER_RATIO = 0.35;
 const ICE_STATUS_TEXT_ID = "iceStatusText";
@@ -195,7 +181,6 @@ function createBoard() {
         tries++;
         if (countClosePairs() <= PAIRS_PER_CELL_LIMIT) break;
     } while (tries < SHUFFLE_TRIES);
-
     if (level !== 4) {
         while (!hasMove()) shuffleBoardData();
     }
@@ -246,13 +231,7 @@ function canGo(row, col, start, end) {
 }
 
 function findPath(start, end) {
-    const directions = [
-        { row: -1, col: 0 },
-        { row: 1, col: 0 },
-        { row: 0, col: -1 },
-        { row: 0, col: 1 }
-    ];
-
+    const directions = [{ row: -1, col: 0 }, { row: 1, col: 0 }, { row: 0, col: -1 }, { row: 0, col: 1 }];
     const queue = [{ row: start.row, col: start.col, dir: -1, turns: 0, path: [makeCell(start.row, start.col)] }];
     const visited = {};
 
@@ -621,7 +600,6 @@ function shiftRandomRow() {
         if (!isObstacle(rowIndex, col)) cols.push(col);
     }
     if (cols.length <= 1) return;
-
     const values = cols.map(function (col) { return board[rowIndex][col]; });
     values.unshift(values.pop());
     for (let i = 0; i < cols.length; i++) {
