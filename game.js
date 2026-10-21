@@ -10,9 +10,9 @@ const TIME_PER_LEVEL = 10;
 const PAIRS_PER_CELL_LIMIT = 10;
 const SHUFFLE_TRIES = 100;
 const images = ["images/pikachu1.png", "images/pikachu2.png", "images/pikachu3.png",
-                "images/pikachu4.png", "images/pikachu5.png", "images/pikachu6.png",
-                "images/pikachu7.png", "images/pikachu8.png", "images/pikachu9.png",
-                "images/pikachu10.png", "images/pikachu11.png", "images/pikachu12.png"];
+    "images/pikachu4.png", "images/pikachu5.png", "images/pikachu6.png",
+    "images/pikachu7.png", "images/pikachu8.png", "images/pikachu9.png",
+    "images/pikachu10.png", "images/pikachu11.png", "images/pikachu12.png"];
 
 const SKILL_TYPES = ["teleport", "destroy", "double", "freeze"];
 const MEMORY_REVEAL_INITIAL_MIN_MS = 2200;
@@ -1320,13 +1320,7 @@ function updateLevel() {
 }
 
 function updateLive() {
-    const maxLives = Math.max(1, INITIAL_LIVES - (level - 1));
     heartIcons.forEach(function (icon, index) {
-        if (index >= maxLives) {
-            icon.classList.add("hidden");
-            return;
-        }
-        icon.classList.remove("hidden");
         icon.classList.toggle("lost", index >= lives);
     });
 }
@@ -1441,7 +1435,7 @@ function gameOver() {
 }
 
 function applyLevelRules() {
-    lives = Math.max(1, INITIAL_LIVES - (level - 1));
+    lives = INITIAL_LIVES;
     hintCount = Math.max(0, INITIAL_HINTS - (level - 1));
     if (level === 5 || level === 6) shuffleCount = 0;
     else if (level === 2 || level === 3) shuffleCount = 2;
@@ -1562,15 +1556,7 @@ function advanceToNextLevel() {
     levelScore = 0;
     updateLevelScore();
     resetRoundFlags();
-    lives = Math.max(1, INITIAL_LIVES - (level - 1));
-    hintCount = Math.max(0, INITIAL_HINTS - (level - 1));
-    if (level === 5 || level === 6) shuffleCount = 0;
-    else if (level === 2 || level === 3) shuffleCount = 2;
-    else shuffleCount = 1;
-
-    time = INITIAL_TIME - (level - 1) * TIME_PER_LEVEL;
-    if (time < MIN_TIME) time = MIN_TIME;
-    maxTime = time;
+    applyLevelRules();
 
     refreshHud();
     loadLevelBoard();
