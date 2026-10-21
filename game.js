@@ -1516,6 +1516,27 @@ function startGame() {
     showMessage("Level " + level + ": Hãy chọn 2 hình giống nhau");
 }
 
+function restartCurrentLevel() {
+    clearInterval(timer);
+    clearTimeout(boardShuffleTimer);
+    clearTimeout(memoryHideTimer);
+    clearAllMemoryRevealTimers();
+
+    levelScore = 0;
+    updateLevelScore();
+
+    resetRoundFlags();
+    applyLevelRules();
+    updateSoundButton();
+    boardElement.classList.remove("game-exited");
+
+    refreshHud();
+    loadLevelBoard();
+    if (level !== 5) renderBoard();
+    startTimer();
+    showLevelIntro();
+}
+
 function startLevel(selectedLevel) {
     clearInterval(timer);
     clearTimeout(boardShuffleTimer);
@@ -1616,7 +1637,7 @@ function highlightHint(rowA, colA, rowB, colB) {
 }
 
 newButton.addEventListener("click", function () {
-    startGame();
+    restartCurrentLevel();
 });
 
 levelButton.addEventListener("click", function () {
@@ -1716,5 +1737,4 @@ exitButton.addEventListener("click", function () {
     boardElement.innerHTML = "";
     showMessage("Bạn đã thoát khỏi game");
 });
-
 startGame();
