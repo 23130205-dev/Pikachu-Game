@@ -1036,13 +1036,13 @@ function resolveMemoryMatch() {
     const second = level5Selected[1];
 
     if (board[first.row][first.col] !== board[second.row][second.col]) {
-        finishMemoryAttempt(false, "Sai cặp");
+        finishMemoryAttempt(true, "Sai cặp");
         return;
     }
 
     const path = findPath(first, second);
     if (path === null) {
-        finishMemoryAttempt(false, "Hai hình giống nhau nhưng không thể nối");
+        finishMemoryAttempt(true, "Hai hình giống nhau nhưng không thể nối");
         return;
     }
 
