@@ -57,7 +57,6 @@
             width: 16px;
             height: 16px;
             position: relative;
-            transition: transform 0.3s ease, opacity 0.3s;
         }
 
         .lives .heart-icon::before,
@@ -85,7 +84,6 @@
 
         .lives .heart-icon.lost {
             opacity: 0.2;
-            transform: scale(0.8);
         }
 
         .lives .heart-icon.lost::before,
@@ -128,7 +126,6 @@
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35);
-            transition: all 0.2s ease;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -141,24 +138,10 @@
             line-height: 1;
         }
 
-        .menu button:hover {
-            background: #0891b2;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.45);
-        }
-
-        .menu button:active {
-            transform: scale(0.95);
-        }
-
         .menu button.hint-button {
             background: #e3c084;
             color: #222;
             border-color: #f1b825;
-        }
-
-        .menu button.hint-button:hover {
-            background: #fbbf24;
         }
 
         .hint-count,
@@ -243,11 +226,6 @@
             cursor: pointer;
         }
 
-        .level-select-button:hover {
-            background: #0891b2;
-            transform: translateY(-2px);
-        }
-
         .close-level-button {
             width: 120px;
             height: 40px;
@@ -258,10 +236,6 @@
             color: white;
             font-weight: bold;
             cursor: pointer;
-        }
-
-        .close-level-button:hover {
-            background-color: #777;
         }
 
         .board-box {
@@ -293,7 +267,6 @@
             width: 100%;
             height: 100%;
             background-color: #22c55e;
-            transition: width 1s linear, background-color 0.3s;
         }
 
         .time-progress.warning {
@@ -323,10 +296,6 @@
             align-items: center;
             cursor: pointer;
             user-select: none;
-        }
-
-        .cell:hover {
-            background-color: #ffe3f1;
         }
 
         .cell img {
@@ -371,11 +340,6 @@
         .cell.skill-destroy::after  { content: "⚒"; }
         .cell.skill-double::after   { content: "★"; }
         .cell.skill-freeze::after   { content: "❄"; }
-
-        .cell.skill-cell:hover {
-            background-color: #f3e89e;
-            transform: scale(1.05);
-        }
 
         .cell.night-hidden {
             background: #111827 !important;
@@ -431,26 +395,10 @@
             opacity: 0.9;
         }
 
-        .cell.ice-cell.ice-thawing,
-        .cell.ice-cell.thawing {
-            animation: ice-thaw 0.8s ease-in-out infinite;
-        }
-
         .cell.ice-cell.ice-thawing::before,
         .cell.ice-cell.thawing::before {
             content: "❄";
             opacity: 0.95;
-            animation: ice-drip 1s ease-in-out infinite;
-        }
-
-        @keyframes ice-thaw {
-            0%, 100% { background: #d4f3fc; }
-            50%      { background: #b6e7fa; }
-        }
-
-        @keyframes ice-drip {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); }
-            50%      { transform: translate(-50%, -45%) scale(1.15); }
         }
 
         .ice-status {
@@ -482,7 +430,6 @@
             height: 100%;
             width: 0%;
             background: #fde68a;
-            transition: width 0.3s ease;
             border-radius: 4px;
         }
 
@@ -491,20 +438,10 @@
             border-color: #38bdf8;
         }
 
-        .menu button.ice-break-button:hover {
-            background: #0284c7;
-        }
-
         .menu button.ice-break-button.ready {
             background: #f59e0b;
             border-color: #fbbf24;
             color: #082f49;
-            animation: ice-ready-pulse 1.2s ease-in-out infinite;
-        }
-
-        @keyframes ice-ready-pulse {
-            0%, 100% { transform: scale(1); box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35); }
-            50%      { transform: scale(1.05); box-shadow: 0 0 16px rgba(251, 191, 36, 0.7); }
         }
 
         .path {
@@ -562,8 +499,8 @@
         <div id="iceStatus" class="ice-status">
             <span id="iceStatusText">Băng giá: 0/2</span>
             <span class="ice-progress-bar">
-                    <span class="ice-progress-fill" id="iceProgressFill"></span>
-                </span>
+                <span class="ice-progress-fill" id="iceProgressFill"></span>
+            </span>
         </div>
         <div class="level">Level: <span id="level">1</span>/6</div>
         <div class="time">Thời gian: <span id="time">300</span></div>
