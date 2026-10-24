@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pikachu Game</title>
-
     <style>
         * {
             box-sizing: border-box;
@@ -38,7 +37,7 @@
             justify-content: space-between;
             padding: 0 20px;
             color: white;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
         }
 
@@ -94,14 +93,10 @@
             background-color: #888;
         }
 
-        .lives .heart-icon.hidden {
-            display: none;
-        }
-
         .level {
             border: 2px solid #ffffff;
             border-radius: 12px;
-            padding: 10px 20px;
+            padding: 6px 14px;
         }
 
         .time {
@@ -111,20 +106,20 @@
         .main-container {
             display: flex;
             gap: 12px;
-            align-content: center;
+            align-items: center;
         }
 
         .menu {
             width: 85px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
         }
 
         .menu button {
             position: relative;
             width: 85px;
-            height: 55px;
+            height: 52px;
             border: 1px solid #39727a;
             border-radius: 12px;
             background: #164e63;
@@ -133,7 +128,7 @@
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35);
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -148,13 +143,12 @@
 
         .menu button:hover {
             background: #0891b2;
-            transform: translateY(-3px);
+            transform: translateY(-2px);
             box-shadow: 0 5px 12px rgba(0, 0, 0, 0.45);
         }
 
         .menu button:active {
             transform: scale(0.95);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
         }
 
         .menu button.hint-button {
@@ -173,14 +167,14 @@
             position: absolute;
             top: -7px;
             right: -7px;
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             border: 2px solid #181818;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
@@ -273,7 +267,7 @@
         .board-box {
             position: relative;
             width: 900px;
-            height: 530px;
+            height: 520px;
             background-image: url("images/background.jpg");
             background-size: cover;
             background-position: center;
@@ -285,7 +279,7 @@
 
         .time-bar {
             position: absolute;
-            top: -12px;
+            top: -10px;
             left: 0;
             width: 100%;
             height: 8px;
@@ -437,10 +431,12 @@
             opacity: 0.9;
         }
 
+        .cell.ice-cell.ice-thawing,
         .cell.ice-cell.thawing {
             animation: ice-thaw 0.8s ease-in-out infinite;
         }
 
+        .cell.ice-cell.ice-thawing::before,
         .cell.ice-cell.thawing::before {
             content: "💧";
             opacity: 0.95;
@@ -513,8 +509,8 @@
 
         .path {
             position: absolute;
-            left: -3px;
-            top: -3px;
+            left: 0;
+            top: 0;
             width: 100%;
             height: 100%;
             z-index: 5;
@@ -524,7 +520,7 @@
         .path-line {
             fill: none;
             stroke: #00ff00;
-            stroke-width: 5;
+            stroke-width: 4;
             stroke-linecap: square;
             stroke-linejoin: round;
         }
@@ -555,7 +551,7 @@
 <div class="game-container">
     <div class="top-container">
         <div class="score">Điểm: <span id="score">0</span></div>
-        <div class="level-score">Điểm level hiện tại: <span id="levelScore">0</span></div>
+        <div class="level-score">Điểm level: <span id="levelScore">0</span></div>
         <div class="lives" id="lives">Mạng:
             <span class="heart-icon"></span>
             <span class="heart-icon"></span>
