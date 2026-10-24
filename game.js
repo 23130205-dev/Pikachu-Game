@@ -991,20 +991,24 @@ function scheduleMemoryRehide(row, col) {
         randomInt(MEMORY_REVEAL_DURATION_MAX_MS - MEMORY_REVEAL_DURATION_MIN_MS);
     memoryRevealTimers[key] = setTimeout(function () {
         if (level !== 5 || gameEnded) return;
-        const stillSelected = level5Selected.some(function (cell) {
-            return cell.row === row && cell.col === col;
+        if (paused) {
+            scheduleMemoryRehide(row, col);
+            return;
+        }
+        const isSelected = level5Selected.some(function (cell) {
+            return sameCell(cell, makeCell(row, col));
         });
-        if (stillSelected) return;
-        const stillHidden = hiddenCells.some(function (cell) {
-            return cell.row === row && cell.col === col;
-        });
-        if (!stillHidden) return;
-        delete memoryRevealTimers[key];
-        delete level5HiddenReveal[key];
-        renderBoard();
+        if (isSelected || level5Processing) {
+            scheduleMemoryRehide(row, col);
+            return;
+        }
+        if (level5HiddenReveal.hasOwnProperty(key)) {
+            delete level5HiddenReveal[key];
+            delete memoryRevealTimers[key];
+            renderBoard();
+        }
     }, duration);
 }
-
 function clickMemoryCell(row, col) {
     if (memoryVisible) {
         showMessage("Hãy ghi nhớ vị trí các hình!");
@@ -1012,51 +1016,43 @@ function clickMemoryCell(row, col) {
     }
     if (level5Processing) return;
     if (board[row][col] === -1) return;
-
+    const cell = makeCell(row, col);
     const key = memoryCellKey(row, col);
-    const existingIndex = level5Selected.findIndex(function (cell) {
-        return sameCell(cell, makeCell(row, col));
+    const existingIndex = level5Selected.findIndex(function (item) {
+        return sameCell(item, cell);
     });
-
     if (existingIndex !== -1) {
         level5Selected.splice(existingIndex, 1);
-        showMessage("Đã bỏ chọn ô");
         renderBoard();
+        showMessage("Đã bỏ chọn ô");
         return;
     }
 
     const hidden = isHiddenMemoryCell(row, col);
     const revealed = level5HiddenReveal.hasOwnProperty(key);
-
-    if (hidden && revealed) {
-        if (memoryRevealCount[key] > 0) memoryRevealCount[key]--;
-        clearTimeout(memoryRevealTimers[key]);
-        delete memoryRevealTimers[key];
-        delete level5HiddenReveal[key];
-        showMessage("Đã đóng ô ẩn - hoàn lại 1 lượt mở");
-        renderBoard();
-        return;
-    }
-
-    if (hidden) {
-        if (!memoryRevealCount[key]) memoryRevealCount[key] = 0;
+    if (hidden && !revealed) {
+        if (!memoryRevealCount[key]) {
+            memoryRevealCount[key] = 0;
+        }
         if (memoryRevealCount[key] >= MEMORY_MAX_REVEALS_PER_CELL) {
             showMessage("Ô ẩn này đã hết lượt mở - hãy dùng trí nhớ");
             return;
         }
         memoryRevealCount[key]++;
         level5HiddenReveal[key] = true;
+        level5Selected.push(cell);
         scheduleMemoryRehide(row, col);
-        showMessage("Đã mở ô ẩn (" + memoryRevealCount[key] + "/" + MEMORY_MAX_REVEALS_PER_CELL + ") - click lại để chọn hoặc đóng");
+        renderBoard();
+        showMessage("Đã mở và chọn ô ẩn (" + memoryRevealCount[key] + "/" + MEMORY_MAX_REVEALS_PER_CELL + ")");
+    } else {
+        level5Selected.push(cell);
+        renderBoard();
     }
 
-    level5Selected.push(makeCell(row, col));
-    renderBoard();
-
-    if (level5Selected.length < 2) return;
-
-    level5Processing = true;
-    resolveMemoryMatch();
+    if (level5Selected.length === 2) {
+        level5Processing = true;
+        resolveMemoryMatch();
+    }
 }
 
 function resolveMemoryMatch() {
