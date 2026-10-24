@@ -810,16 +810,36 @@ function transformLevel3Board() {
     showMessage("Sau 2 cặp, các hình trên bàn đã biến đổi tương ứng theo cặp");
 }
 
+
 function setupLevel4() {
-    let tries = 0;
-    do {
+    nightCenterRow = 3;
+    nightCenterCol = 6;
+    nightTimeCount = 0;
+    let found = false;
+    for (let tries = 0; tries < 100; tries++) {
         createBoard();
-        nightCenterRow = 3;
-        nightCenterCol = 6;
-        tries++;
-        if (findNightCenter(true)) return;
-    } while (tries < 80);
-    recoverLevel4Move();
+        if (findNightCenter(true) && hasMove()) {
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        for (let tries = 0; tries < 100; tries++) {
+            shuffleBoardData();
+            if (findNightCenter(true) && hasMove()) {
+                found = true;
+                break;
+            }
+        }
+    }
+
+    if (!found) {
+        nightRadius = Math.max(3, nightRadius);
+        nightCenterRow = 4;
+        nightCenterCol = 7;
+        ensureHasMove();
+    }
+    renderBoard();
 }
 
 function inNightView(row, col) {
