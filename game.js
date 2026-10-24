@@ -9,6 +9,9 @@ const MIN_TIME = 60;
 const TIME_PER_LEVEL = 10;
 const PAIRS_PER_CELL_LIMIT = 10;
 const SHUFFLE_TRIES = 100;
+const NIGHT_RADIUS_MIN = 3;
+// Ban kinh toi da de vung sang phu het 1 vung cua ban 9x16.
+const NIGHT_RADIUS_MAX = Math.ceil(Math.max(ROWS, COLUMNS) / 2);
 const images = ["images/pikachu1.png", "images/pikachu2.png", "images/pikachu3.png",
     "images/pikachu4.png", "images/pikachu5.png", "images/pikachu6.png",
     "images/pikachu7.png", "images/pikachu8.png", "images/pikachu9.png",
@@ -50,7 +53,7 @@ let transformMoveCount = 0;
 
 let nightCenterRow = 3;
 let nightCenterCol = 6;
-let nightRadius = 3;
+let nightRadius = NIGHT_RADIUS_MIN;
 let nightTimeCount = 0;
 
 let memoryVisible = true;
@@ -221,12 +224,16 @@ function ensureHasMove() {
 
 function canGo(row, col, start, end) {
     if (row < -1 || row > ROWS || col < -1 || col > COLUMNS) return false;
-    if (row === -1 || row === ROWS || col === -1 || col === COLUMNS) return true;
+    if (row === -1 || row === ROWS || col === -1 || col === COLUMNS) {
+        if (level === 4 && !inNightView(row, col)) return false;
+        return true;
+    }
     if (sameCell({ row: row, col: col }, start)) return true;
     if (sameCell({ row: row, col: col }, end)) return true;
     if ((level === 2 || level === 3) && isObstacle(row, col)) return false;
     if (level === 3 && getSkill(row, col)) return false;
     if (level === 6 && isIce(row, col)) return false;
+    if (level === 4 && !inNightView(row, col)) return false;
     return board[row][col] === -1;
 }
 
@@ -824,6 +831,68 @@ function inNightView(row, col) {
         Math.abs(col - nightCenterCol) <= nightRadius;
 }
 
+// Ban kinh toi thieu de mot vung sang chua duoc 2 o dang cho cung gia tri.
+// Hai o can nam trong MOT vung sang, nen ban kinh phai >= ceil(khoang cach/2).
+function level4RadiusToCoverPair(cellA, cellB) {
+    const rowSpan = Math.abs(cellA.row - cellB.row);
+    const colSpan = Math.abs(cellA.col - cellB.col);
+    return Math.max(Math.ceil(rowSpan / 2), Math.ceil(colSpan / 2));
+}
+
+// Ban kinh toi thieu de vung sang chua duoc TOAN BO nhung o con lai tren ban.
+function level4RadiusToCoverAll() {
+    let minRow = ROWS, maxRow = -1, minCol = COLUMNS, maxCol = -1;
+    let count = 0;
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLUMNS; col++) {
+            if (board[row][col] < 0) continue;
+            count++;
+            if (row < minRow) minRow = row;
+            if (row > maxRow) maxRow = row;
+            if (col < minCol) minCol = col;
+            if (col > maxCol) maxCol = col;
+        }
+    }
+    if (count === 0) return 0;
+    return Math.max(Math.ceil((maxRow - minRow) / 2), Math.ceil((maxCol - minCol) / 2));
+}
+
+// Mo rong vung sang toi dau de chua duoc 2 o dang cho cung gia tri.
+// Tra ve true neu tim thay mot cap co the noi duoc trong vung sang moi.
+function level4FindSpotlightForPair(minRadius) {
+    const cells = [];
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLUMNS; col++) {
+            if (board[row][col] >= 0) cells.push(makeCell(row, col));
+        }
+    }
+    for (let i = 0; i < cells.length; i++) {
+        for (let j = i + 1; j < cells.length; j++) {
+            const cellA = cells[i];
+            const cellB = cells[j];
+            if (board[cellA.row][cellA.col] !== board[cellB.row][cellB.col]) continue;
+            const need = level4RadiusToCoverPair(cellA, cellB);
+            if (need < minRadius) continue;
+            if (need > NIGHT_RADIUS_MAX) continue;
+            // Chon tam vung sang sao cho ca 2 o deu nam trong ban kinh "need".
+            const centerRow = Math.floor((cellA.row + cellB.row) / 2);
+            const centerCol = Math.floor((cellA.col + cellB.col) / 2);
+            const savedRow = nightCenterRow;
+            const savedCol = nightCenterCol;
+            const savedRadius = nightRadius;
+            nightRadius = need;
+            nightCenterRow = centerRow;
+            nightCenterCol = centerCol;
+            const ok = hasMove();
+            nightCenterRow = savedRow;
+            nightCenterCol = savedCol;
+            nightRadius = savedRadius;
+            if (ok) return true;
+        }
+    }
+    return false;
+}
+
 function hasNonEmptyInNightZone() {
     for (let row = nightCenterRow - nightRadius; row <= nightCenterRow + nightRadius; row++) {
         for (let col = nightCenterCol - nightRadius; col <= nightCenterCol + nightRadius; col++) {
@@ -882,27 +951,36 @@ function refreshLevel4View(preferOtherCenter) {
 function handleLevel4AfterMatch() {
     if (!hasMove()) {
         nightTimeCount = 0;
-        showMessage("Không còn nước đi - đang chuyển vùng sáng");
+        showMessage("Không còn nước đi trong vùng sáng - Đang chuyển góc nhìn...");
         setTimeout(function () {
             if (gameEnded || level !== 4) return;
+
+            // Cố tìm tâm sáng mới có nước đi
             if (refreshLevel4View(true)) {
                 renderBoard();
-                showMessage("Bóng tối đã thay đổi vị trí nhìn");
+                showMessage("Đã chuyển vùng sáng!");
             } else {
-                shuffleBoardData();
-                ensureHasMove();
-                let placed = false;
-                for (let i = 0; i < 50 && !placed; i++) {
-                    if (findNightCenter(true) && hasNonEmptyInNightZone()) placed = true;
-                }
-                if (!placed) findNightCenter(true);
+                shuffleBoardUntilNightMove();
                 renderBoard();
-                showMessage("Bàn chơi đã được xáo lại");
+                showMessage("Không còn cặp khả dụng - Đã tự động xáo bài!");
             }
-        }, 300);
+        }, 400);
     } else {
-        showMessage("Đã nối thành công");
+        showMessage("Nối thành công!");
     }
+}
+
+function shuffleBoardUntilNightMove() {
+    let tries = 0;
+    while (tries < 100) {
+        shuffleBoardData();
+        if (findNightCenter(true) && hasMove()) {
+            return true;
+        }
+        tries++;
+    }
+    ensureHasMove();
+    findNightCenter(true);
 }
 
 function setupLevel5() {
@@ -1403,7 +1481,7 @@ function startTimer() {
 
         if (level === 4) {
             nightTimeCount++;
-            if (nightTimeCount >= 15) {
+            if (nightTimeCount >= 10) {
                 nightTimeCount = 0;
                 removeSelected();
                 clearPath();
@@ -1521,15 +1599,12 @@ function restartCurrentLevel() {
     clearTimeout(boardShuffleTimer);
     clearTimeout(memoryHideTimer);
     clearAllMemoryRevealTimers();
-
     levelScore = 0;
     updateLevelScore();
-
     resetRoundFlags();
     applyLevelRules();
     updateSoundButton();
     boardElement.classList.remove("game-exited");
-
     refreshHud();
     loadLevelBoard();
     if (level !== 5) renderBoard();
